@@ -1,0 +1,29 @@
+{
+  "addons": [
+    "adminium",
+    "cleardb",
+    "trevor"
+  ],
+  "buildpacks": [
+    {
+      "url": "heroku/php"
+    }
+  ],
+  "env": {
+    "ADMINIUM_URL": {
+      "required": true
+    },
+    "CLEARDB_DATABASE_URL": {
+      "required": true
+    }
+  },
+  "formation": {
+    "web": {
+      "quantity": 1
+    }
+  },
+  "name": "callhistory",
+  "scripts": {
+  },
+  "stack": "heroku-16"
+}
