@@ -33,6 +33,15 @@ if ($message == '/start') {
 	sendMessage($chat_id, "__йоу__");
 }
 
+if ($message == '/cid') {
+	sendMessage($chat_id, "id этого чата: `".$chat_id."`");
+}
+
+if ($message == '/setup') {
+	//deleteMessage
+	sendMessage($user, "вызван из `".$chat_id."`");
+}
+
 if ($new_user) {
 	sendWelcomeMessage($chat_id, "ебать здарова нахуй", $message_id);
 }
