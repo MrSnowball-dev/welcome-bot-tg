@@ -2,8 +2,7 @@
 //ini_set('display_errors', 1);
 include 'config.php';
 
-$token = $tg_bot_token;
-$api = 'https://api.telegram.org/bot'.$token;
+$api = 'https://api.telegram.org/bot'.$tg_bot_token;
 
 $input = file_get_contents('php://input');
 $output = json_decode($input, TRUE); //сюда приходят все запросы по вебхукам
@@ -36,7 +35,7 @@ if ($message == '/start') {
 
 //отправка форматированного сообщения
 function sendMessage($chat_id, $message) {
-	file_get_contents($GLOBALS['api'].'/sendMessage?chat_id='.$chat_id.'&text='.urlencode($message).'&parse_mode=MarkupV2');
+	file_get_contents($GLOBALS['api'].'/sendMessage?chat_id='.$chat_id.'&text='.urlencode($message).'&parse_mode=MarkdownV2');
 }
 
 mysqli_close($db);
