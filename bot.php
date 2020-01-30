@@ -32,7 +32,7 @@ echo "Init successful.\n";
 //----------------------------------------------------------------------------------------------------------------------------------//
 
 if ($message == '/start') {
-	sendMessage($chat_id, "Для настройки приветственных сообщений - добавьте меня в чат и наберите там /setup");
+	sendMessage($chat_id, "бля");
 }
 
 // if ($message == '/setup') {
@@ -89,8 +89,7 @@ function sendWelcomeMessage($chat_id, $message, $new_member_message_id) {
 	file_get_contents($GLOBALS['api'].'/sendMessage?chat_id='.$chat_id.'&text='.urlencode($message).'&parse_mode=MarkdownV2'.'&reply_to_message_id='.$new_member_message_id);
 }
 
-function deleteMessage($chat_id, $message_id)
-{
+function deleteMessage($chat_id, $message_id) {
 	file_get_contents($GLOBALS['api'].'/deleteMessage?chat_id='.$chat_id.'&message_id='.$message_id);
 }
 
