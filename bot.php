@@ -51,12 +51,12 @@ if ($message == '/setup') {
 }
 
 if (is_int(stripos($message, '/set'))) {
-	$setup_array = explode(" ", substr($message, 5), 2;
+	$setup_array = explode(" ", substr($message, 5), 2);
 	$chat_to_setup = $setup_array[0];
 	$message_to_setup = $setup_array[1];
 
 	mysqli_query($db, "update main set welcome_message_text=".$message_to_setup." where chat_id=".$chat_to_setup);
-	sendMessage($chat_id, "Сообщение для `".$chat_to_setup."` установлено.")
+	sendMessage($chat_id, "Сообщение для `".$chat_to_setup."` установлено.");
 }
 
 if ($new_user) {
