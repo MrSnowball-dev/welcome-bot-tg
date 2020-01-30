@@ -32,51 +32,51 @@ echo "Init successful.\n";
 //----------------------------------------------------------------------------------------------------------------------------------//
 
 if ($message == '/start') {
-	sendMessage($chat_id, "Для настройки приветственных сообщений - добавьте меня в чат и наберите там \/setup");
+	sendMessage($chat_id, "Для настройки приветственных сообщений - добавьте меня в чат и наберите там /setup");
 }
 
-if ($message == '/setup') {
-	deleteMessage($chat_id, $message_id);
-	$query = mysqli_query($db, 'select chat_id from main where chat_id='.$chat_id);
-	while ($sql = mysqli_fetch_object($query)) {
-		$sql_chat_id = $sql->chat_id;
-	}
+// if ($message == '/setup') {
+// 	deleteMessage($chat_id, $message_id);
+// 	$query = mysqli_query($db, 'select chat_id from main where chat_id='.$chat_id);
+// 	while ($sql = mysqli_fetch_object($query)) {
+// 		$sql_chat_id = $sql->chat_id;
+// 	}
 	
-	if ($sql_chat_id == $chat_id) {
-		sendMessage($user_id, "Чат _".$chat."_ уже настроен. Для изменения приветственного сообщения напишите мне\n\n`\/set ".$chat_id." <ваше сообщение>`  <-- строку можно скопировать");
-	} else {
-		mysqli_query($db, "insert into main (chat_id, chat_owner_user_id) values (".$chat_id.", ".$user_id.")");
-		sendMessage($user_id, "Вы включили приветственные сообщения для _".$chat."_!\nЧтобы задать своё приветствие, напишите мне\n\n`\/set ".$chat_id." <ваше сообщение>`  <-- строку можно скопировать\n\nВ дальнейшем, изменить приветствие для чата сможете только вы.");
-	}
-}
+// 	if ($sql_chat_id == $chat_id) {
+// 		sendMessage($user_id, "Чат _".$chat."_ уже настроен. Для изменения приветственного сообщения напишите мне\n\n`/set ".$chat_id." <ваше сообщение>`  <-- строку можно скопировать");
+// 	} else {
+// 		mysqli_query($db, "insert into main (chat_id, chat_owner_user_id) values (".$chat_id.", ".$user_id.")");
+// 		sendMessage($user_id, "Вы включили приветственные сообщения для _".$chat."_!\nЧтобы задать своё приветствие, напишите мне\n\n`/set ".$chat_id." <ваше сообщение>`  <-- строку можно скопировать\n\nВ дальнейшем, изменить приветствие для чата сможете только вы.");
+// 	}
+// }
 
-if (is_int(stripos($message, '/set'))) {
-	$setup_array = explode(" ", substr($message, 5), 2);
-	$chat_to_setup = $setup_array[0];
-	$message_to_setup = $setup_array[1];
+// if (is_int(stripos($message, '/set'))) {
+// 	$setup_array = explode(" ", substr($message, 5), 2);
+// 	$chat_to_setup = $setup_array[0];
+// 	$message_to_setup = $setup_array[1];
 
-	mysqli_query($db, "update main set welcome_message_text=".$message_to_setup." where chat_id=".$chat_to_setup);
-	sendMessage($chat_id, "Сообщение для `".$chat_to_setup."` установлено.");
-}
+// 	mysqli_query($db, "update main set welcome_message_text=".$message_to_setup." where chat_id=".$chat_to_setup);
+// 	sendMessage($chat_id, "Сообщение для `".$chat_to_setup."` установлено.");
+// }
 
-if ($new_user) {
-	$query = mysqli_query($db, 'select chat_id from main where chat_id='.$chat_id);
-	while ($sql = mysqli_fetch_object($query)) {
-		$sql_chat_id = $sql->chat_id;
-	}
+// if ($new_user) {
+// 	$query = mysqli_query($db, 'select chat_id from main where chat_id='.$chat_id);
+// 	while ($sql = mysqli_fetch_object($query)) {
+// 		$sql_chat_id = $sql->chat_id;
+// 	}
 	
-	if ($sql_chat_id == $chat_id) {
-		$query = mysqli_query($db, 'select welcome_message_text from main where chat_id='.$chat_id);
-		while ($sql = mysqli_fetch_object($query)) {
-			$welcome_message = $sql->welcome_message_text;
-		}
-		sendWelcomeMessage($chat_id, $welcome_message, $message_id);
-	} else {
-		sendWelcomeMessage($chat_id, "Привет!", $message_id);
-	}
+// 	if ($sql_chat_id == $chat_id) {
+// 		$query = mysqli_query($db, 'select welcome_message_text from main where chat_id='.$chat_id);
+// 		while ($sql = mysqli_fetch_object($query)) {
+// 			$welcome_message = $sql->welcome_message_text;
+// 		}
+// 		sendWelcomeMessage($chat_id, $welcome_message, $message_id);
+// 	} else {
+// 		sendWelcomeMessage($chat_id, "Привет!", $message_id);
+// 	}
 
-	mysqli_free_result($sql);
-}
+// 	mysqli_free_result($sql);
+// }
 
 //----------------------------------------------------------------------------------------------------------------------------------//
 
