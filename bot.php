@@ -29,9 +29,7 @@ echo "Init successful.\n";
 
 //регистрация+генерация secret для ACR
 if ($message == '/start') {
-	sendMessage($chat_id, 
-		"йоу",
-		$lang_keyboard);
+	sendMessage($chat_id, "йоу");
 }
 
 if ($message == '📳 Тихий режим') {
@@ -41,36 +39,11 @@ if ($message == '📳 Тихий режим') {
 	}
 	if ($silent == 0) {
 		mysqli_query($db, 'update users set silent=1 where chat_id='.$chat_id);
-		sendMessage($chat_id, "Тихий режим *включен*", 'Markdown', $ru_keyboard);
+		sendMessage($chat_id, "Тихий режим *включен*");
 	} else {
 		mysqli_query($db, 'update users set silent=0 where chat_id='.$chat_id);
-		sendMessage($chat_id, "Тихий режим *отключен*", 'Markdown', $ru_keyboard);
+		sendMessage($chat_id, "Тихий режим *отключен*");
 	}
-	mysqli_free_result($sql);
-}
-
-//получили что-то от ACR? отправляем запись!
-if ($_POST['source'] == 'ACR' || $_POST['source'] == 'com.nll.acr') {
-	echo "Got ACR Record...";
-	echo "";
-	
-	echo "Checking secret...";
-	$query = mysqli_query($db, "select * from users where acr_secret=SHA2('".$_POST['secret']."', 256)");
-	while ($sql = mysqli_fetch_object($query)) {
-		$chat_id = $sql->chat_id;
-		$secret = $sql->acr_secret;
-		$silent = $sql->silent;
-	}
-	
-	if ($secret == hash('sha256', $_POST['secret'])) {
-		sendVoice($chat_id, round($_POST['duration']/1000), $final_report, $silent);
-		echo "Secret good, voice sent.";
-		echo "";
-	} else {
-		echo "Secret failed! Please check credentials.";
-		echo "";
-	}
-	
 	mysqli_free_result($sql);
 }
 //----------------------------------------------------------------------------------------------------------------------------------//
