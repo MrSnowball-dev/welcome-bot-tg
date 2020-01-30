@@ -22,6 +22,7 @@ if ($check = mysqli_query($db, 'select * from main')) {
 $chat_id = $output['message']['chat']['id']; //отделяем id чата, откуда идет обращение к боту
 $message = $output['message']['text']; //сам текст сообщения
 $user = $output['message']['from']['username'];
+$user_id = $output['message']['from']['id'];
 $message_id = $output['message']['message_id'];
 $new_user = $output['message']['new_chat_members'];
 
@@ -39,7 +40,8 @@ if ($message == '/cid') {
 
 if ($message == '/setup') {
 	//deleteMessage
-	sendMessage($user, "вызван из `".$chat_id."`");
+	sendMessage($chat_id, "твой user_id: `".$user_id."`");
+	sendMessage($user_id, "вызван из `".$chat_id."`");
 }
 
 if ($new_user) {
