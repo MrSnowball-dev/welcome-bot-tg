@@ -14,7 +14,7 @@ $db = mysqli_connect($db_host, $db_username, $db_pass, $db_schema);
 if (mysqli_connect_errno()) echo "Failed to connect to MySQL: " . mysqli_connect_error();
 	else echo "MySQL connect successful.\n";
 
-if ($check = mysqli_query($db, 'select * from users')) {
+if ($check = mysqli_query($db, 'select * from main')) {
 	$count = mysqli_num_rows($check);
 	echo "There is $count records in DB.\n\n";
 	mysqli_free_result($check);
