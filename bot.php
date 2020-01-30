@@ -22,13 +22,19 @@ if ($check = mysqli_query($db, 'select * from main')) {
 $chat_id = $output['message']['chat']['id']; //отделяем id чата, откуда идет обращение к боту
 $message = $output['message']['text']; //сам текст сообщения
 $user = $output['message']['from']['username'];
+$message_id = $output['message']['message_id'];
+$new_user = $output['message']['new_chat_members'];
 
 echo "Init successful.\n";
 
 //----------------------------------------------------------------------------------------------------------------------------------//
 
 if ($message == '/start') {
-	sendMessage($chat_id, "йоу");
+	sendMessage($chat_id, "__йоу__");
+}
+
+if ($new_user) {
+	sendWelcomeMessage($chat_id, "ебать здарова нахуй", $message_id);
 }
 
 //----------------------------------------------------------------------------------------------------------------------------------//
@@ -36,6 +42,10 @@ if ($message == '/start') {
 //отправка форматированного сообщения
 function sendMessage($chat_id, $message) {
 	file_get_contents($GLOBALS['api'].'/sendMessage?chat_id='.$chat_id.'&text='.urlencode($message).'&parse_mode=MarkdownV2');
+}
+
+function sendWelcomeMessage($chat_id, $message, $new_member_message_id) {
+	file_get_contents($GLOBALS['api'].'/sendMessage?chat_id='.$chat_id.'&text='.urlencode($message).'&parse_mode=MarkdownV2'.'&reply_to_message_id='.$new_member_message_id);
 }
 
 mysqli_close($db);
