@@ -41,14 +41,14 @@ if ($message == '/setup') {
 	while ($sql = mysqli_fetch_object($query)) {
 		$sql_chat_id = $sql->chat_id;
 	}
-	sendMessage($user_id, "1");
+	sendMessage($user_id, "1 ".$sql_chat_id);
 	if ($sql_chat_id == $chat_id) {
 		sendMessage($user_id, "2");
-		sendMessage($user_id, "Чат _".$chat."_ уже настроен. Для изменения приветственного сообщения напишите мне\n\n`/set ".$chat_id." <ваше сообщение>`  <-- строку можно скопировать");
+		sendMessage($user_id, "Чат ".$chat." уже настроен. Для изменения приветственного сообщения напишите мне\n\n`/set ".$chat_id." <ваше сообщение>`  <-- строку можно скопировать");
 	} else {
-		sendMessage($user_id, "3");
+		sendMessage($user_id, "3 ".$chat_id);
 		mysqli_query($db, "insert into main (chat_id, chat_owner_user_id) values (".$chat_id.", ".$user_id.")");
-		sendMessage($user_id, "Вы включили приветственные сообщения для _".$chat."_!\nЧтобы задать своё приветствие, напишите мне\n\n`/set ".$chat_id." <ваше сообщение>`  <-- строку можно скопировать\n\nВ дальнейшем, изменить приветствие для чата сможете только вы.");
+		sendMessage($user_id, "Вы включили приветственные сообщения для ".$chat."!\nЧтобы задать своё приветствие, напишите мне\n\n`/set ".$chat_id." <ваше сообщение>`  <-- строку можно скопировать\n\nВ дальнейшем, изменить приветствие для чата сможете только вы.");
 	}
 }
 
