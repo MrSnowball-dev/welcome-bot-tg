@@ -35,18 +35,19 @@ if ($message == '/start') {
 	sendMessage($chat_id, "Для настройки приветственных сообщений - добавьте меня в чат и наберите там /setup");
 }
 
+if ($message == '/test') {
+	sendMessage($chat_id, "Вы включили приветственные сообщения для ".$chat_id."!\nЧтобы задать своё приветствие, напишите мне\n\n`/set ".$chat_id." <ваше сообщение>`  <-- строку можно скопировать\n\nВ дальнейшем, изменить приветствие для чата сможете только вы.");
+}
+
 if ($message == '/setup') {
 	deleteMessage($chat_id, $message_id);
 	$query = mysqli_query($db, 'select chat_id from main where chat_id='.$chat_id);
 	while ($sql = mysqli_fetch_object($query)) {
 		$sql_chat_id = $sql->chat_id;
 	}
-	sendMessage($user_id, "1 ".$chat_id);
 	if ($sql_chat_id == $chat_id) {
-		sendMessage($user_id, "2");
 		sendMessage($user_id, "Чат ".$chat." уже настроен. Для изменения приветственного сообщения напишите мне\n\n`/set ".$chat_id." <ваше сообщение>`  <-- строку можно скопировать");
 	} else {
-		sendMessage($user_id, "3 ".$chat_id);
 		mysqli_query($db, "insert into main (chat_id, chat_owner_user_id) values (".$chat_id.", ".$user_id.")");
 		sendMessage($user_id, "Вы включили приветственные сообщения для ".$chat."!\nЧтобы задать своё приветствие, напишите мне\n\n`/set ".$chat_id." <ваше сообщение>`  <-- строку можно скопировать\n\nВ дальнейшем, изменить приветствие для чата сможете только вы.");
 	}
@@ -83,7 +84,7 @@ if ($new_user) {
 if (is_int(stripos($message, '/mysql'))) {
 	$query = substr($message, 7);
 	mysqli_query($db, $query);
-	sendMessage($chat_id, 'Доне, '.$query);
+	sendMessage($chat_id, "Доне\n".$query);
 }
 
 //----------------------------------------------------------------------------------------------------------------------------------//
