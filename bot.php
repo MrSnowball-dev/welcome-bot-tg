@@ -44,7 +44,7 @@ if ($message == '/setup') {
 		while ($sql = mysqli_fetch_object($query)) {
 			$owner_id = $sql->chat_owner_user_id;
 		}
-		if (($owner_id == $user_id) || $owner_id === NULL) {
+		if (($owner_id == $user_id) || ($owner_id === NULL)) {
 			$query = mysqli_query($db, 'select chat_id from main where chat_id='.$chat_id);
 			while ($sql = mysqli_fetch_object($query)) {
 				$sql_chat_id = $sql->chat_id;
@@ -60,7 +60,7 @@ if ($message == '/setup') {
 				sendMessage($user_id, "Вы включили приветственные сообщения для _".$chat."_!\nЧтобы задать своё приветствие, напишите мне\n\n`/set ".$chat_id." <ваше сообщение>`\n^строку можно скопировать\n\nВ дальнейшем, изменить приветствие для чата сможете только вы.\n\nПриветственные сообщения можно форматировать (пока MarkdownV2 не поддерживается). Для этого используйте следующий синтаксис:\n\n\_текст\_ - курсив\n\*текст\* - жирный\n\[текст](ссылка) - для вставки ссылки в форме текста\n\\n - перенос строки\n\nСсылки на пользователей через @ и хештеги # работают как обычно.\nДля поддержки пишите @mrsnowball");
 			}
 		} else {
-			sendMessage($chat_id, "У вас нет прав на изменение приветственных сообщений для этого чата!\nТекущий владелец доступен по [ссылке](tg://user="..").")
+			sendMessage($chat_id, "У вас нет прав на изменение приветственных сообщений для этого чата!\nТекущий владелец доступен по [ссылке](tg://user?id=".$owner_id.").")
 		}
 	}
 	mysqli_free_result($sql);
