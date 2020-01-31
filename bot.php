@@ -9,6 +9,7 @@ $output = json_decode($input, TRUE); //сюда приходят все запр
 
 //соединение с БД
 $db = mysqli_connect($db_host, $db_username, $db_pass, $db_schema);
+mysqli_query($db, "SET NAMES utf8mb4 COLLATION utf8mb4_unicode_ci");
 if (mysqli_connect_errno()) echo "Failed to connect to MySQL: " . mysqli_connect_error();
 	else echo "MySQL connect successful.\n";
 
@@ -66,13 +67,22 @@ if ($message == '/setup') {
 	mysqli_free_result($sql);
 }
 
-if (is_int(stripos($message, '/set '))) {
+if ((is_int(stripos($message, '/set '))) && ($chat_id > 0)) {
 	$setup_array = explode(" ", substr($message, 5), 2);
 	$chat_to_setup = $setup_array[0];
 	$message_to_setup = $setup_array[1];
 
-	mysqli_query($db, "update main set welcome_message_text='".$message_to_setup."' where chat_id=".$chat_to_setup);
-	sendMessage($chat_id, "Сообщение \n\n".$message_to_setup."\n\n для `".$chat_to_setup."` установлено.");
+	$query = mysqli_query($db, 'select chat_owner_user_id from main where chat_id='.$chat_id);
+	while ($sql = mysqli_fetch_object($query)) {
+		$owner = $sql->chat_owner_user_id;
+	}
+	if ($owner == $user_id) {
+		header("Content-Type: text/html; charset=utf-8");
+		mysqli_query($db, "update main set welcome_message_text='".$message_to_setup."' where chat_id=".$chat_to_setup);
+		sendMessage($chat_id, "Сообщение \n\n".$message_to_setup."\n\n для `".$chat_to_setup."` установлено.");
+	} else {
+		sendMessage($chat_id, "У вас нет прав на изменение приветственных сообщений для этого чата!\nТекущий владелец доступен по [ссылке](tg://user?id=".$owner.").");
+	}
 }
 
 if ($new_user) {
@@ -86,6 +96,7 @@ if ($new_user) {
 		while ($sql = mysqli_fetch_object($query)) {
 			$welcome_message = $sql->welcome_message_text;
 		}
+		mysqli_query($db, 'update main set welcome_count=welcome_count+1 where chat_id='.$chat_id);
 		sendWelcomeMessage($chat_id, $welcome_message, $message_id);
 	} else {
 		sendWelcomeMessage($chat_id, "Привет!", $message_id);
