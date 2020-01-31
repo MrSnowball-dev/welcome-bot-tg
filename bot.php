@@ -41,16 +41,18 @@ if ($message == '/setup') {
 	while ($sql = mysqli_fetch_object($query)) {
 		$sql_chat_id = $sql->chat_id;
 	}
-	
+	sendMessage($user_id, "1");
 	if ($sql_chat_id == $chat_id) {
-		sendMessage($user_id, "Чат __".$chat."__ уже настроен. Для изменения приветственного сообщения напишите мне\n\n`/add ".$chat_id." <ваше сообщение>`  <-- строку можно скопировать");
+		sendMessage($user_id, "2");
+		sendMessage($user_id, "Чат _".$chat."_ уже настроен. Для изменения приветственного сообщения напишите мне\n\n`/set ".$chat_id." <ваше сообщение>`  <-- строку можно скопировать");
 	} else {
+		sendMessage($user_id, "3");
 		mysqli_query($db, "insert into main (chat_id, chat_owner_user_id) values (".$chat_id.", ".$user_id.")");
-		sendMessage($user_id, "Вы включили приветственные сообщения для __".$chat."__!\nЧтобы задать своё приветствие, напишите мне\n\n`/add ".$chat_id." <ваше сообщение>`  <-- строку можно скопировать\n\nВ дальнейшем, изменить приветствие для чата сможете только вы.");
+		sendMessage($user_id, "Вы включили приветственные сообщения для _".$chat."_!\nЧтобы задать своё приветствие, напишите мне\n\n`/set ".$chat_id." <ваше сообщение>`  <-- строку можно скопировать\n\nВ дальнейшем, изменить приветствие для чата сможете только вы.");
 	}
 }
 
-if (is_int(stripos($message, '/add'))) {
+if (is_int(stripos($message, '/set '))) {
 	$setup_array = explode(" ", substr($message, 5), 2);
 	$chat_to_setup = $setup_array[0];
 	$message_to_setup = $setup_array[1];
