@@ -43,20 +43,20 @@ if ($message == '/setup') {
 	}
 	
 	if ($sql_chat_id == $chat_id) {
-		sendMessage($user_id, "Чат \_".$chat."\_ уже настроен\. Для изменения приветственного сообщения напишите мне\n\n\`/set ".$chat_id." <ваше сообщение\>\`  <-- строку можно скопировать");
+		sendMessage($user_id, "Чат _".$chat."_ уже настроен\. Для изменения приветственного сообщения напишите мне\n\n`/add ".$chat_id." <ваше сообщение\>`  <-- строку можно скопировать");
 	} else {
 		mysqli_query($db, "insert into main (chat_id, chat_owner_user_id) values (".$chat_id.", ".$user_id.")");
-		sendMessage($user_id, "Вы включили приветственные сообщения для \_".$chat."\_\!\nЧтобы задать своё приветствие, напишите мне\n\n \`/set ".$chat_id." <ваше сообщение\>\`  <-- строку можно скопировать\n\nВ дальнейшем, изменить приветствие для чата сможете только вы\.");
+		sendMessage($user_id, "Вы включили приветственные сообщения для _".$chat."_\!\nЧтобы задать своё приветствие, напишите мне\n\n`/add ".$chat_id." <ваше сообщение\>`  <-- строку можно скопировать\n\nВ дальнейшем, изменить приветствие для чата сможете только вы\.");
 	}
 }
 
-if (is_int(stripos($message, '/set'))) {
+if (is_int(stripos($message, '/add'))) {
 	$setup_array = explode(" ", substr($message, 5), 2);
 	$chat_to_setup = $setup_array[0];
 	$message_to_setup = $setup_array[1];
 
 	mysqli_query($db, "update main set welcome_message_text=".$message_to_setup." where chat_id=".$chat_to_setup);
-	sendMessage($chat_id, "Сообщение для \`".$chat_to_setup."\` установлено\.");
+	sendMessage($chat_id, "Сообщение для `".$chat_to_setup."` установлено\.");
 }
 
 if ($new_user) {
