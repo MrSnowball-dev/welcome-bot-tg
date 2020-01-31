@@ -1,6 +1,7 @@
 <?php
 //ini_set('display_errors', 1);
 include 'config.php';
+header('Content-Type: text/html; charset=utf-8');
 
 $api = 'https://api.telegram.org/bot'.$tg_bot_token;
 
@@ -9,6 +10,7 @@ $output = json_decode($input, TRUE); //сюда приходят все запр
 
 //соединение с БД
 $db = mysqli_connect($db_host, $db_username, $db_pass, $db_schema);
+mysqli_set_charset($db, 'utf8');
 if (mysqli_connect_errno()) echo "Failed to connect to MySQL: " . mysqli_connect_error();
 	else echo "MySQL connect successful.\n";
 
