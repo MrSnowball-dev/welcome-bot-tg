@@ -77,7 +77,7 @@ if ((is_int(stripos($message, '/set '))) && ($chat_id > 0)) {
 	while ($sql = mysqli_fetch_object($query)) {
 		$owner = $sql->chat_owner_user_id;
 	}
-	if ($owner == $user_id) {
+	if (($owner_id == $user_id) || ($owner_id === NULL)) {
 		mysqli_query($db, "update main set welcome_message_text='".$message_to_setup."' where chat_id=".$chat_to_setup);
 		sendMessage($chat_id, "Сообщение \n\n".$message_to_setup."\n\n для `".$chat_to_setup."` установлено.");
 	} else {
