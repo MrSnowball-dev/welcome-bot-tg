@@ -32,7 +32,7 @@ echo "Init successful.\n";
 //----------------------------------------------------------------------------------------------------------------------------------//
 
 if ($message == '/start') {
-	sendMessage($chat_id, "Для настройки приветственных сообщений \- добавьте меня в чат и наберите там /setup");
+	sendMessage($chat_id, "Для настройки приветственных сообщений - добавьте меня в чат и наберите там /setup");
 }
 
 if ($message == '/setup') {
@@ -43,10 +43,10 @@ if ($message == '/setup') {
 	}
 	
 	if ($sql_chat_id == $chat_id) {
-		sendMessage($user_id, "Чат _".$chat."_ уже настроен\. Для изменения приветственного сообщения напишите мне\n\n`/add ".$chat_id." <ваше сообщение\>`  <-- строку можно скопировать");
+		sendMessage($user_id, "Чат __".$chat."__ уже настроен. Для изменения приветственного сообщения напишите мне\n\n`/add ".$chat_id." <ваше сообщение>`  <-- строку можно скопировать");
 	} else {
 		mysqli_query($db, "insert into main (chat_id, chat_owner_user_id) values (".$chat_id.", ".$user_id.")");
-		sendMessage($user_id, "Вы включили приветственные сообщения для _".$chat."_\!\nЧтобы задать своё приветствие, напишите мне\n\n`/add ".$chat_id." <ваше сообщение\>`  <-- строку можно скопировать\n\nВ дальнейшем, изменить приветствие для чата сможете только вы\.");
+		sendMessage($user_id, "Вы включили приветственные сообщения для __".$chat."__!\nЧтобы задать своё приветствие, напишите мне\n\n`/add ".$chat_id." <ваше сообщение>`  <-- строку можно скопировать\n\nВ дальнейшем, изменить приветствие для чата сможете только вы.");
 	}
 }
 
@@ -55,8 +55,8 @@ if (is_int(stripos($message, '/add'))) {
 	$chat_to_setup = $setup_array[0];
 	$message_to_setup = $setup_array[1];
 
-	mysqli_query($db, "update main set welcome_message_text=".$message_to_setup." where chat_id=".$chat_to_setup);
-	sendMessage($chat_id, "Сообщение для `".$chat_to_setup."` установлено\.");
+	mysqli_query($db, "update main set welcome_message_text='".$message_to_setup."' where chat_id=".$chat_to_setup);
+	sendMessage($chat_id, "Сообщение \n\n".$message_to_setup."\n\n для `".$chat_to_setup."` установлено.");
 }
 
 if ($new_user) {
@@ -72,7 +72,7 @@ if ($new_user) {
 		}
 		sendWelcomeMessage($chat_id, $welcome_message, $message_id);
 	} else {
-		sendWelcomeMessage($chat_id, "Привет\!", $message_id);
+		sendWelcomeMessage($chat_id, "Привет!", $message_id);
 	}
 
 	mysqli_free_result($sql);
@@ -82,11 +82,11 @@ if ($new_user) {
 
 //отправка форматированного сообщения
 function sendMessage($chat_id, $message) {
-	file_get_contents($GLOBALS['api'].'/sendMessage?chat_id='.$chat_id.'&text='.urlencode($message).'&parse_mode=MarkdownV2');
+	file_get_contents($GLOBALS['api'].'/sendMessage?chat_id='.$chat_id.'&text='.urlencode($message).'&parse_mode=Markdown');
 }
 
 function sendWelcomeMessage($chat_id, $message, $new_member_message_id) {
-	file_get_contents($GLOBALS['api'].'/sendMessage?chat_id='.$chat_id.'&text='.urlencode($message).'&parse_mode=MarkdownV2'.'&reply_to_message_id='.$new_member_message_id);
+	file_get_contents($GLOBALS['api'].'/sendMessage?chat_id='.$chat_id.'&text='.urlencode($message).'&parse_mode=Markdown'.'&reply_to_message_id='.$new_member_message_id);
 }
 
 function deleteMessage($chat_id, $message_id) {
