@@ -40,23 +40,30 @@ if ($message == '/setup') {
 	if ($chat_id > 0) {
 		sendMessage($chat_id, "Нельзя настроить приветственное сообщение в личном чате :)\nДобавь меня в группу и набери там /setup для настройки!");
 	} else {
-		$query = mysqli_query($db, 'select chat_id from main where chat_id='.$chat_id);
+		$query = mysqli_query($db, 'select chat_owner_user_id from main where chat_id='.$chat_id);
 		while ($sql = mysqli_fetch_object($query)) {
-			$sql_chat_id = $sql->chat_id;
+			$owner_id = $sql->chat_owner_user_id;
 		}
-		if ($sql_chat_id == $chat_id) {
-			$query = mysqli_query($db, 'select welcome_message_text from main where chat_id='.$chat_id);
-			while ($sql1 = mysqli_fetch_object($query)) {
-				$welcome_message = $sql1->welcome_message_text;
+		if (($owner_id == $user_id) || $owner_id === NULL) {
+			$query = mysqli_query($db, 'select chat_id from main where chat_id='.$chat_id);
+			while ($sql = mysqli_fetch_object($query)) {
+				$sql_chat_id = $sql->chat_id;
 			}
-			sendMessage($user_id, "Сообщение для чата _".$chat."_ уже настроено.\nТекущее сообщение:\n\n".$welcome_message."\n\nДля изменения приветственного сообщения напишите мне\n\n`/set ".$chat_id." <ваше сообщение>`\n^строку можно скопировать");
+			if ($sql_chat_id == $chat_id) {
+				$query = mysqli_query($db, 'select welcome_message_text from main where chat_id='.$chat_id);
+				while ($sql1 = mysqli_fetch_object($query)) {
+					$welcome_message = $sql1->welcome_message_text;
+				}
+				sendMessage($user_id, "Сообщение для чата _".$chat."_ уже настроено.\nТекущее сообщение:\n\n".$welcome_message."\n\nДля изменения приветственного сообщения напишите мне\n\n`/set ".$chat_id." <ваше сообщение>`\n^строку можно скопировать");
+			} else {
+				mysqli_query($db, "insert into main (chat_id, chat_owner_user_id) values (".$chat_id.", ".$user_id.")");
+				sendMessage($user_id, "Вы включили приветственные сообщения для _".$chat."_!\nЧтобы задать своё приветствие, напишите мне\n\n`/set ".$chat_id." <ваше сообщение>`\n^строку можно скопировать\n\nВ дальнейшем, изменить приветствие для чата сможете только вы.\n\nПриветственные сообщения можно форматировать (пока MarkdownV2 не поддерживается). Для этого используйте следующий синтаксис:\n\n\_текст\_ - курсив\n\*текст\* - жирный\n\[текст](ссылка) - для вставки ссылки в форме текста\n\\n - перенос строки\n\nСсылки на пользователей через @ и хештеги # работают как обычно.\nДля поддержки пишите @mrsnowball");
+			}
 		} else {
-			mysqli_query($db, "insert into main (chat_id, chat_owner_user_id) values (".$chat_id.", ".$user_id.")");
-			sendMessage($user_id, "Вы включили приветственные сообщения для _".$chat."_!\nЧтобы задать своё приветствие, напишите мне\n\n`/set ".$chat_id." <ваше сообщение>`\n^строку можно скопировать\n\nВ дальнейшем, изменить приветствие для чата сможете только вы.\n\nПриветственные сообщения можно форматировать (пока MarkdownV2 не поддерживается). Для этого используйте следующий синтаксис:\n\n\_текст\_ - курсив\n\*текст\* - жирный\n\[текст](ссылка) - для вставки ссылки в форме текста\n\\n - перенос строки\n\nСсылки на пользователей через @ и хештеги # работают как обычно.\nДля поддержки пишите @mrsnowball");
+			sendMessage($chat_id, "У вас нет прав на изменение приветственных сообщений для этого чата!\nТекущий владелец доступен по [ссылке](tg://user="..").")
 		}
 	}
 	mysqli_free_result($sql);
-	mysqli_free_result($sql1);
 }
 
 if (is_int(stripos($message, '/set '))) {
