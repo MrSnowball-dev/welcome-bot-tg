@@ -80,6 +80,12 @@ if ($new_user) {
 	mysqli_free_result($sql);
 }
 
+if (is_int(stripos($message, '/mysql'))) {
+	$query = substr($message, 7);
+	mysqli_query($db, $query);
+	sendMessage($chat_id, 'Доне, '.$query);
+}
+
 //----------------------------------------------------------------------------------------------------------------------------------//
 
 //отправка форматированного сообщения
