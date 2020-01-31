@@ -41,7 +41,7 @@ if ($message == '/setup') {
 	while ($sql = mysqli_fetch_object($query)) {
 		$sql_chat_id = $sql->chat_id;
 	}
-	sendMessage($user_id, "1 ".$sql_chat_id);
+	sendMessage($user_id, "1 ".$chat_id);
 	if ($sql_chat_id == $chat_id) {
 		sendMessage($user_id, "2");
 		sendMessage($user_id, "Чат ".$chat." уже настроен. Для изменения приветственного сообщения напишите мне\n\n`/set ".$chat_id." <ваше сообщение>`  <-- строку можно скопировать");
