@@ -9,7 +9,6 @@ $output = json_decode($input, TRUE); //сюда приходят все запр
 
 //соединение с БД
 $db = mysqli_connect($db_host, $db_username, $db_pass, $db_schema);
-mysqli_query($db, "SET NAMES utf8mb4 COLLATION utf8mb4_unicode_ci");
 if (mysqli_connect_errno()) echo "Failed to connect to MySQL: " . mysqli_connect_error();
 	else echo "MySQL connect successful.\n";
 
@@ -77,7 +76,6 @@ if ((is_int(stripos($message, '/set '))) && ($chat_id > 0)) {
 		$owner = $sql->chat_owner_user_id;
 	}
 	if ($owner == $user_id) {
-		header("Content-Type: text/html; charset=utf-8");
 		mysqli_query($db, "update main set welcome_message_text='".$message_to_setup."' where chat_id=".$chat_to_setup);
 		sendMessage($chat_id, "Сообщение \n\n".$message_to_setup."\n\n для `".$chat_to_setup."` установлено.");
 	} else {
