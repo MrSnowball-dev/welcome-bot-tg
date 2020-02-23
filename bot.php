@@ -22,13 +22,13 @@ if ($check = mysqli_query($db, 'select * from main')) {
 }
 
 //телеграмные события
-$chat_id = $output['message']['chat']['id']; //отделяем id чата, откуда идет обращение к боту
-$chat = $output['message']['chat']['title'];
-$message = $output['message']['text']; //сам текст сообщения
-$user = $output['message']['from']['username'];
-$user_id = $output['message']['from']['id'];
-$message_id = $output['message']['message_id'];
-$new_user = $output['message']['new_chat_members'];
+$chat_id = isset($output['message']['chat']['id']) ? $output['message']['chat']['id'] : 'chat_id_empty'; //отделяем id чата, откуда идет обращение к боту
+$chat = isset($output['message']['chat']['title']) ? $output['message']['chat']['title'] : 'chat_title_empty';
+$message = isset($output['message']['text']) ? $output['message']['text'] : 'message_text_empty'; //сам текст сообщения
+$user = isset($output['message']['from']['username']) ? $output['message']['from']['username'] : 'origin_user_empty';
+$user_id = isset($output['message']['from']['id']) ? $output['message']['from']['id'] : 'origin_user_id_empty';
+$message_id = isset($output['message']['message_id']) ? $output['message']['message_id'] : 'message_id_empty';
+$new_user = isset($output['message']['new_chat_members']) ? $output['message']['new_chat_members'] : 'new_user_empty';
 
 echo "Init successful.\n";
 
