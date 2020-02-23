@@ -86,7 +86,7 @@ if ((is_int(stripos($message, '/set '))) && ($chat_id > 0)) {
 	}
 }
 
-if ($new_user) {
+if ($new_user !== 'new_user_empty') {
 	$query = mysqli_query($db, 'select chat_id from main where chat_id='.$chat_id);
 	while ($sql = mysqli_fetch_object($query)) {
 		$sql_chat_id = $sql->chat_id;
