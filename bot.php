@@ -35,13 +35,13 @@ echo "Init successful.\n";
 //----------------------------------------------------------------------------------------------------------------------------------//
 
 if ($message == '/start') {
-	sendMessage($chat_id, "Для настройки приветственных сообщений - добавьте меня в чат и наберите там /setup");
+	sendMessage($chat_id, "Для настройки приветственных сообщений - добавьте меня в чат и наберите там /init");
 }
 
-if ($message == '/setup') {
+if ($message == '/init') {
 	deleteMessage($chat_id, $message_id);
 	if ($chat_id > 0) {
-		sendMessage($chat_id, "Нельзя настроить приветственное сообщение в личном чате :)\nДобавь меня в группу и набери там /setup для настройки!");
+		sendMessage($chat_id, "Нельзя настроить приветственное сообщение в личном чате :)\nДобавь меня в группу и набери там /init для настройки!");
 	} else {
 		$query = mysqli_query($db, 'select chat_owner_user_id from main where chat_id='.$chat_id);
 		while ($sql = mysqli_fetch_object($query)) {
@@ -74,9 +74,9 @@ if ((is_int(stripos($message, '/set '))) && ($chat_id > 0)) {
 	$chat_to_setup = $setup_array[0];
 	$message_to_setup = $setup_array[1];
 
-	$query = mysqli_query($db, 'select chat_owner_user_id from main where chat_id='.$chat_id);
+	$query = mysqli_query($db, 'select chat_owner_user_id from main where chat_id='.$chat_to_setup);
 	while ($sql = mysqli_fetch_object($query)) {
-		$owner = $sql->chat_owner_user_id;
+		$owner_id = $sql->chat_owner_user_id;
 	}
 	if (($owner_id == $user_id) || ($owner_id === NULL)) {
 		mysqli_query($db, "update main set welcome_message_text='".$message_to_setup."' where chat_id=".$chat_to_setup);
