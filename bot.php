@@ -6,20 +6,7 @@ header('Content-Type: text/html; charset=utf-8');
 $api = 'https://api.telegram.org/bot'.$tg_bot_token;
 
 $input = file_get_contents('php://input');
-$output = json_decode($input, TRUE); //сюда приходят все запросы по вебхукам
-
-//соединение с БД
-$db = mysqli_connect($db_host, $db_username, $db_pass, $db_schema);
-mysqli_set_charset($db, 'utf8mb4');
-mysqli_query($db, "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci");
-if (mysqli_connect_errno()) echo "Failed to connect to MySQL: " . mysqli_connect_error();
-	else echo "MySQL connect successful.\n";
-
-if ($check = mysqli_query($db, 'select * from main')) {
-	$count = mysqli_num_rows($check);
-	echo "There is $count records in DB.\n\n";
-	mysqli_free_result($check);
-}
+$output = json_decode($input, TRUE); //сюда приходят все запросы по вебхука
 
 //телеграмные события
 $chat_id = isset($output['message']['chat']['id']) ? $output['message']['chat']['id'] : 'chat_id_empty'; //отделяем id чата, откуда идет обращение к боту
@@ -39,6 +26,18 @@ if ($message == '/start') {
 }
 
 if ($message == '/init') {
+	$db = mysqli_connect($db_host, $db_username, $db_pass, $db_schema);
+	mysqli_set_charset($db, 'utf8mb4');
+	mysqli_query($db, "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci");
+	if (mysqli_connect_errno()) echo "Failed to connect to MySQL: " . mysqli_connect_error();
+		else echo "MySQL connect successful.\n";
+
+	if ($check = mysqli_query($db, 'select * from main')) {
+		$count = mysqli_num_rows($check);
+		echo "There is $count records in DB.\n\n";
+		mysqli_free_result($check);
+	}
+	
 	deleteMessage($chat_id, $message_id);
 	if ($chat_id > 0) {
 		sendMessage($chat_id, "Нельзя настроить приветственное сообщение в личном чате :)\nДобавь меня в группу и набери там /init для настройки!");
@@ -67,9 +66,21 @@ if ($message == '/init') {
 		}
 	}
 	mysqli_free_result($sql);
+	mysqli_close($db);
 }
 
 if ((is_int(stripos($message, '/set '))) && ($chat_id > 0)) {
+	$db = mysqli_connect($db_host, $db_username, $db_pass, $db_schema);
+	mysqli_set_charset($db, 'utf8mb4');
+	mysqli_query($db, "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci");
+	if (mysqli_connect_errno()) echo "Failed to connect to MySQL: " . mysqli_connect_error();
+		else echo "MySQL connect successful.\n";
+
+	if ($check = mysqli_query($db, 'select * from main')) {
+		$count = mysqli_num_rows($check);
+		echo "There is $count records in DB.\n\n";
+		mysqli_free_result($check);
+	}
 	$setup_array = explode(" ", substr($message, 5), 2);
 	$chat_to_setup = $setup_array[0];
 	$message_to_setup = $setup_array[1];
@@ -84,9 +95,21 @@ if ((is_int(stripos($message, '/set '))) && ($chat_id > 0)) {
 	} else {
 		sendMessage($chat_id, "У вас нет прав на изменение приветственных сообщений для этого чата!\nТекущий владелец доступен по [ссылке](tg://user?id=".$owner.").");
 	}
+	mysqli_close($db);
 }
 
 if ($new_user !== 'new_user_empty') {
+	$db = mysqli_connect($db_host, $db_username, $db_pass, $db_schema);
+	mysqli_set_charset($db, 'utf8mb4');
+	mysqli_query($db, "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci");
+	if (mysqli_connect_errno()) echo "Failed to connect to MySQL: " . mysqli_connect_error();
+		else echo "MySQL connect successful.\n";
+
+	if ($check = mysqli_query($db, 'select * from main')) {
+		$count = mysqli_num_rows($check);
+		echo "There is $count records in DB.\n\n";
+		mysqli_free_result($check);
+	}
 	$query = mysqli_query($db, 'select chat_id from main where chat_id='.$chat_id);
 	while ($sql = mysqli_fetch_object($query)) {
 		$sql_chat_id = $sql->chat_id;
@@ -104,9 +127,21 @@ if ($new_user !== 'new_user_empty') {
 	}
 
 	mysqli_free_result($sql);
+	mysqli_close($db);
 }
 
 if (is_int(stripos($message, '/mysql'))) {
+	$db = mysqli_connect($db_host, $db_username, $db_pass, $db_schema);
+	mysqli_set_charset($db, 'utf8mb4');
+	mysqli_query($db, "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci");
+	if (mysqli_connect_errno()) echo "Failed to connect to MySQL: " . mysqli_connect_error();
+		else echo "MySQL connect successful.\n";
+
+	if ($check = mysqli_query($db, 'select * from main')) {
+		$count = mysqli_num_rows($check);
+		echo "There is $count records in DB.\n\n";
+		mysqli_free_result($check);
+	}
 	$query = substr($message, 7);
 	mysqli_query($db, $query);
 	sendMessage($chat_id, "Доне\n".$query);
@@ -127,6 +162,5 @@ function deleteMessage($chat_id, $message_id) {
 	file_get_contents($GLOBALS['api'].'/deleteMessage?chat_id='.$chat_id.'&message_id='.$message_id);
 }
 
-mysqli_close($db);
 echo "End script."
 ?>
