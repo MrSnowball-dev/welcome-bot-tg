@@ -1,7 +1,6 @@
 <?php
 //ini_set('display_errors', 1);
 include 'config.php';
-include 'memecount.php';
 header('Content-Type: text/html; charset=utf-8');
 
 $api = 'https://api.telegram.org/bot'.$tg_bot_token;
@@ -149,14 +148,16 @@ if (is_int(stripos($message, '/mysql'))) {
 }
 
 if ($message == '/meme') {
-	$memecount = $memecount+1;
-	$var_str = var_export($memecount, true);
-	$var = "<?php\n\n\$memecount = $var_str;\n\n?>";
-	file_put_contents('memecount.php', $var);
+	$file = 'memecount.txt';
+	$memecount = file_get_contents($file);
+	$fdata = intval($memecount)+1; // increment the value
+	file_put_contents($file, $fdata); // write the new value back to file
 }
 
 if ($message == '/memecount') {
-	sendMessage($chat_id, '/meme count: '.$memecount);
+	$file = 'memecount.txt';
+	$memecount = file_get_contents($file);
+	sendMessage($chat_id, '/meme count: '.intval($memecount));
 }
 
 //----------------------------------------------------------------------------------------------------------------------------------//
