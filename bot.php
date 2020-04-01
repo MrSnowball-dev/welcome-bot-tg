@@ -147,6 +147,16 @@ if (is_int(stripos($message, '/mysql'))) {
 	sendMessage($chat_id, "Доне\n".$query);
 }
 
+if ($message == '/meme') {
+	include 'memecount.php';
+	file_put_contents('memecount.php', $memecount++);
+}
+
+if ($message == '/memecount') {
+	include 'memecount.php';
+	sendMessage($chat_id, '/meme count: '.$memecount);
+}
+
 //----------------------------------------------------------------------------------------------------------------------------------//
 
 //отправка форматированного сообщения
