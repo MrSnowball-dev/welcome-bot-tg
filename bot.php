@@ -157,7 +157,7 @@ if ($message == '/meme') {
 if ($message == '/memecount') {
 	$file = 'memecount.txt';
 	$memecount = file_get_contents($file);
-	sendMessage($chat_id, '/meme count: '.intval($memecount));
+	sendMessage($chat_id, '/meme count (since 02.04.2020 0:00): '.intval($memecount).' memes.');
 }
 
 //----------------------------------------------------------------------------------------------------------------------------------//
