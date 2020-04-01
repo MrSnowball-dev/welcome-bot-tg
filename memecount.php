@@ -1,3 +1,0 @@
-<?php
-  $memecount = 0;
-?>
