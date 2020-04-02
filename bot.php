@@ -95,6 +95,7 @@ if ((is_int(stripos($message, '/set '))) && ($chat_id > 0)) {
 	} else {
 		sendMessage($chat_id, "У вас нет прав на изменение приветственных сообщений для этого чата!\nТекущий владелец доступен по [ссылке](tg://user?id=".$owner.").");
 	}
+	mysqli_free_result($sql);
 	mysqli_close($db);
 }
 
@@ -137,11 +138,6 @@ if (is_int(stripos($message, '/mysql'))) {
 	if (mysqli_connect_errno()) echo "Failed to connect to MySQL: " . mysqli_connect_error();
 		else echo "MySQL connect successful.\n";
 
-	if ($check = mysqli_query($db, 'select * from main')) {
-		$count = mysqli_num_rows($check);
-		echo "There is $count records in DB.\n\n";
-		mysqli_free_result($check);
-	}
 	$query = substr($message, 7);
 	mysqli_query($db, $query);
 	sendMessage($chat_id, "Доне\n".$query);
@@ -154,13 +150,9 @@ if ($message == '/meme') {
 	if (mysqli_connect_errno()) echo "Failed to connect to MySQL: " . mysqli_connect_error();
 		else echo "MySQL connect successful.\n";
 
-	if ($check = mysqli_query($db, 'select * from main')) {
-		$count = mysqli_num_rows($check);
-		echo "There is $count records in DB.\n\n";
-		mysqli_free_result($check);
-	}
-
-	mysqli_query($db, 'update main set memecount=memecount+1 where chat_id=-1001268103928');
+	mysqli_query($db, 'update main set memecount=memecount+1 where chat_id=\'-1001268103928\'');
+	mysqli_free_result($sql);
+	mysqli_close($db);
 }
 
 if ($message == '/memecount') {
@@ -170,16 +162,13 @@ if ($message == '/memecount') {
 	if (mysqli_connect_errno()) echo "Failed to connect to MySQL: " . mysqli_connect_error();
 		else echo "MySQL connect successful.\n";
 
-	if ($check = mysqli_query($db, 'select * from main')) {
-		$count = mysqli_num_rows($check);
-		echo "There is $count records in DB.\n\n";
-		mysqli_free_result($check);
-	}
-	$query = mysqli_query($db, 'select memecount from main where chat_id=-1001268103928');
+	$query = mysqli_query($db, 'select memecount from main where chat_id=\'-1001268103928\'');
 	while ($sql = mysqli_fetch_object($query)) {
 		$memecount = $sql->memecount;
 	}
 	sendMessage($chat_id, '/meme count (since 02.04.2020 0:00): '.$memecount.' memes.');
+	mysqli_free_result($sql);
+	mysqli_close($db);
 }
 
 //----------------------------------------------------------------------------------------------------------------------------------//
