@@ -143,7 +143,7 @@ if (is_int(stripos($message, '/mysql'))) {
 	sendMessage($chat_id, "Доне\n".$query);
 }
 
-if (is_int(stripos($message, '/meme'))) {
+if (is_int(stripos($message, '/meme')) && $message !== '/memecount') {
 	$db = mysqli_connect($db_host, $db_username, $db_pass, $db_schema);
 	mysqli_set_charset($db, 'utf8mb4');
 	mysqli_query($db, "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci");
