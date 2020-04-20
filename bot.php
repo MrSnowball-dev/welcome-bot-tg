@@ -143,7 +143,7 @@ if (is_int(stripos($message, '/mysql'))) {
 	sendMessage($chat_id, "Доне\n".$query);
 }
 
-if ($message == '/meme') {
+if (is_int(stripos($message, '/meme'))) {
 	$db = mysqli_connect($db_host, $db_username, $db_pass, $db_schema);
 	mysqli_set_charset($db, 'utf8mb4');
 	mysqli_query($db, "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci");
@@ -166,7 +166,7 @@ if ($message == '/memecount') {
 	while ($sql = mysqli_fetch_object($query)) {
 		$memecount = $sql->memecount;
 	}
-	sendMessage($chat_id, '/meme count (since 02.04.2020 0:00): '.$memecount.' memes.');
+	sendMessage($chat_id, 'Every meme count: *'.$memecount.'* memes.');
 	mysqli_free_result($sql);
 	mysqli_close($db);
 }
