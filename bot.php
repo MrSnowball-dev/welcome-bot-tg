@@ -1,5 +1,5 @@
 <?php
-//ini_set('display_errors', 1);
+ini_set('display_errors', 1);
 include 'config.php';
 header('Content-Type: text/html; charset=utf-8');
 
@@ -11,6 +11,7 @@ $output = json_decode($input, TRUE); //сюда приходят все запр
 //телеграмные события
 $chat_id = isset($output['message']['chat']['id']) ? $output['message']['chat']['id'] : 'chat_id_empty'; //отделяем id чата, откуда идет обращение к боту
 $chat = isset($output['message']['chat']['title']) ? $output['message']['chat']['title'] : 'chat_title_empty';
+$chat_type = isset($output['message']['chat']['type']) ? $output['message']['chat']['type'] : 'chat_type_empty';
 $new_chat_title = isset($output['message']['new_chat_title']) ? $output['message']['new_chat_title'] : 'new_chat_title_empty';
 $message = isset($output['message']['text']) ? $output['message']['text'] : 'message_text_empty'; //сам текст сообщения
 $user = isset($output['message']['from']['username']) ? $output['message']['from']['username'] : 'origin_user_empty';
@@ -20,6 +21,7 @@ $message_id = isset($output['message']['message_id']) ? $output['message']['mess
 $new_user = isset($output['message']['new_chat_members']) ? $output['message']['new_chat_members'] : 'new_user_empty';
 $migrated_from = isset($output['message']['migrate_from_chat_id']) ? $output['message']['migrate_from_chat_id'] : 'no_migration';
 $migrated_to = isset($output['message']['migrate_to_chat_id']) ? $output['message']['migrate_to_chat_id'] : 'no_migration';
+$sticker = isset($output['message']['sticker']) ? $output['message']['sticker'] : 'no_sticker';
 
 $callback_query = isset($output['callback_query']) ? $output['callback_query'] : 'callback_query_empty'; //сюда получаем все, что приходит от inline клавиатуры
 $callback_id = isset($callback_query['id']) ? $callback_query['id'] : 'callback_id_empty';
@@ -166,7 +168,7 @@ if ($new_user !== 'new_user_empty') {
 		while ($sql = mysqli_fetch_object($query)) {
 			$welcome_message = strtr($sql->welcome_message_text, $markdownify_array);
 		}
-		mysqli_query($db, 'update main set welcome_count=welcome_count+1 where chat_id='.$chat_id);
+		mysqli_query($db, 'update main set welcome_count=welcome_count+1, last_joined=CURRENT_TIMESTAMP where chat_id='.$chat_id);
 		sendWelcomeMessage($chat_id, $welcome_message, $message_id);
 	} else {
 		sendWelcomeMessage($chat_id, "Привет\!", $message_id);
@@ -176,35 +178,47 @@ if ($new_user !== 'new_user_empty') {
 	mysqli_close($db);
 }
 
-if (($message == '/settings' || $message == '/settings@welcome_ng_bot') && $chat_id > 0) {
-	$db = mysqli_connect($db_host, $db_username, $db_pass, $db_schema);
-	mysqli_set_charset($db, 'utf8mb4');
-	mysqli_query($db, "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci");
-	if (mysqli_connect_errno()) error_log("Failed to connect to MySQL: " . mysqli_connect_error());
-		else echo "MySQL connect successful.\n";
+if ($message == '/settings' || $message == '/settings@welcome_ng_bot') {
+	if ($chat_type == 'private') {
+		$db = mysqli_connect($db_host, $db_username, $db_pass, $db_schema);
+		mysqli_set_charset($db, 'utf8mb4');
+		mysqli_query($db, "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci");
+		if (mysqli_connect_errno()) error_log("Failed to connect to MySQL: " . mysqli_connect_error());
+			else echo "MySQL connect successful.\n";
+		
+		$query = mysqli_query($db, 'select distinct language from main where chat_owner_user_id='.$user_id);
+		while ($sql = mysqli_fetch_object($query)) {
+			$language = $sql->language;
+		}
 	
-	$query = mysqli_query($db, 'select distinct language from main where chat_owner_user_id='.$user_id);
-	while ($sql = mysqli_fetch_object($query)) {
-		$language = $sql->language;
+		switch ($language) {
+			case 'ru':
+				$language_switcher_keyboard = ['inline_keyboard' => [
+					[['text' => 'Change to 🇺🇸 English', 'callback_data' => 'lang_switch_to_en']]
+				]];
+				sendMessage($chat_id, "_Ваши настройки:_\n\nЯзык: 🇷🇺 Русский", $language_switcher_keyboard);
+				break;
+	
+			case 'en':
+				$language_switcher_keyboard = ['inline_keyboard' => [
+					[['text' => 'Сменить на 🇷🇺 Русский', 'callback_data' => 'lang_switch_to_ru']]
+				]];
+				sendMessage($chat_id, "_Your settings:_\n\nLanguage: 🇺🇸 English", $language_switcher_keyboard);
+				break;
+		}
+		mysqli_free_result($sql);
+		mysqli_close($db);
+	} else {
+		switch ($user_language_code) {
+			case 'ru':
+				sendWelcomeMessage($chat_id, "_Эта команда доступна только в личном чате с ботом\._", $message_id);
+				break;
+			
+			default:
+				sendWelcomeMessage($chat_id, "_This command is only for private chat with the bot\._", $message_id);
+				break;
+		}
 	}
-
-	switch ($language) {
-		case 'ru':
-			$language_switcher_keyboard = ['inline_keyboard' => [
-				[['text' => 'Change to 🇺🇸 English', 'callback_data' => 'lang_switch_to_en']]
-			]];
-			sendMessage($chat_id, "_Ваши настройки:_\n\nЯзык: 🇷🇺 Русский", $language_switcher_keyboard);
-			break;
-
-		case 'en':
-			$language_switcher_keyboard = ['inline_keyboard' => [
-				[['text' => 'Сменить на 🇷🇺 Русский', 'callback_data' => 'lang_switch_to_ru']]
-			]];
-			sendMessage($chat_id, "_Your settings:_\n\nLanguage: 🇺🇸 English", $language_switcher_keyboard);
-			break;
-	}
-	mysqli_free_result($sql);
-	mysqli_close($db);
 }
 
 
@@ -230,37 +244,49 @@ if ($migrated_from !== 'no_migration') {
 	mysqli_close($db);
 }
 
-if (($message == '/mychats' || $message == '/mychats@welcome_ng_bot') && $chat_id > 0) {
-	$db = mysqli_connect($db_host, $db_username, $db_pass, $db_schema);
-	mysqli_set_charset($db, 'utf8mb4');
-	mysqli_query($db, "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci");
-	if (mysqli_connect_errno()) error_log("Failed to connect to MySQL: " . mysqli_connect_error());
-		else echo "MySQL connect successful.\n";
-
-	$query = mysqli_query($db, 'select chat_id, chat_title, language from main where chat_owner_user_id='.$user_id);
-	while ($sql = mysqli_fetch_object($query)) {
-		$language = $sql->language;
-		if ($language == 'ru') {
-			$menu_chat[] = [['text' => $sql->chat_title, 'callback_data' => 'chat_selected_ru:'.$sql->chat_id]];
-		} else {
-			$menu_chat[] = [['text' => $sql->chat_title, 'callback_data' => 'chat_selected_en:'.$sql->chat_id]];
+if ($message == '/mychats' || $message == '/mychats@welcome_ng_bot') {
+	if ($chat_type == 'private') {
+		$db = mysqli_connect($db_host, $db_username, $db_pass, $db_schema);
+		mysqli_set_charset($db, 'utf8mb4');
+		mysqli_query($db, "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci");
+		if (mysqli_connect_errno()) error_log("Failed to connect to MySQL: " . mysqli_connect_error());
+			else echo "MySQL connect successful.\n";
+	
+		$query = mysqli_query($db, 'select chat_id, chat_title, language from main where chat_owner_user_id='.$user_id);
+		while ($sql = mysqli_fetch_object($query)) {
+			$language = $sql->language;
+			if ($language == 'ru') {
+				$menu_chat[] = [['text' => $sql->chat_title, 'callback_data' => 'chat_selected_ru:'.$sql->chat_id]];
+			} else {
+				$menu_chat[] = [['text' => $sql->chat_title, 'callback_data' => 'chat_selected_en:'.$sql->chat_id]];
+			}
+		}
+	
+		$menu_keyboard_chat_list = ['inline_keyboard' => $menu_chat];
+	
+		switch ($language) {
+			case 'ru':
+				sendMessage($chat_id, "Список чатов, где вы настроили приветствия:", $menu_keyboard_chat_list);
+				break;
+	
+			case 'en':
+				sendMessage($chat_id, "Here's the list of chats where you set up welcome messages:", $menu_keyboard_chat_list);
+				break;
+		}
+	
+		mysqli_free_result($sql);
+		mysqli_close($db);
+	} else {
+		switch ($user_language_code) {
+			case 'ru':
+				sendWelcomeMessage($chat_id, "_Эта команда доступна только в личном чате с ботом\._", $message_id);
+				break;
+			
+			default:
+				sendWelcomeMessage($chat_id, "_This command is only for private chat with the bot\._", $message_id);
+				break;
 		}
 	}
-
-	$menu_keyboard_chat_list = ['inline_keyboard' => $menu_chat];
-
-	switch ($language) {
-		case 'ru':
-			sendMessage($chat_id, "Список чатов, где вы настроили приветствия:", $menu_keyboard_chat_list);
-			break;
-
-		case 'en':
-			sendMessage($chat_id, "Here's the list of chats where you set up welcome messages:", $menu_keyboard_chat_list);
-			break;
-	}
-
-	mysqli_free_result($sql);
-	mysqli_close($db);
 }
 
 
@@ -647,6 +673,88 @@ if ($message == '/memecount') {
 	mysqli_close($db);
 }
 
+if ($sticker['file_unique_id'] == 'AgADuAADq1fECw' && $chat_id == '-1001268103928') {
+	$db = mysqli_connect($db_host, $db_username, $db_pass, $db_schema);
+	if (mysqli_connect_errno()) error_log("Failed to connect to MySQL: " . mysqli_connect_error());
+		else echo "MySQL connect successful.\n";
+
+	mysqli_query($db, 'update main set dubascount=dubascount+1 where chat_id=\'-1001268103928\'');
+	
+	$dubas_stats = mysqli_fetch_all(mysqli_query($db, "select user_id from dubas_stats where user_id=".$user_id), MYSQLI_ASSOC);
+	if (is_null($dubas_stats[0])) {
+		mysqli_query($db, "insert into dubas_stats (user_id, dubas_count) values (".$user_id.", 1)");
+	} else {
+		mysqli_query($db, "update dubas_stats set dubas_count=dubas_count+1 where user_id=".$user_id);
+	}
+
+	mysqli_close($db);
+}
+
+if ($message == '/dubasivobot' || $message == '/dubascount') {
+	$db = mysqli_connect($db_host, $db_username, $db_pass, $db_schema);
+	if (mysqli_connect_errno()) error_log("Failed to connect to MySQL: " . mysqli_connect_error());
+		else echo "MySQL connect successful.\n";
+
+	$query = mysqli_query($db, 'select dubascount from main where chat_id=\'-1001268103928\'');
+	while ($sql = mysqli_fetch_object($query)) {
+		$dubascount = $sql->dubascount;
+	}
+
+	$top10 = mysqli_fetch_all(mysqli_query($db, "select * from dubas_stats order by dubas_count desc limit 10"), MYSQLI_ASSOC);
+	$dubasers = "";
+	
+	foreach ($top10 as $key => $value) {
+		$dubas_last_digit = substr($top10[$key]['dubas_count'], -1);
+		$member = json_decode(file_get_contents($GLOBALS['api'].'/getChatMember?chat_id='.$chat_id.'&user_id='.$top10[$key]['user_id']), TRUE);
+		$members[$key] = $member['result']['user']['first_name'];
+		if ($dubas_last_digit == 2 || $dubas_last_digit == 3 || $dubas_last_digit == 4) {
+			$dub_format = "* раза\n";
+		} else {
+			$dub_format = "* раз\n";
+		}
+		switch ($key) {
+			case 0:
+				$dubasers .= "🥇 *".strtr($members[$key], $markdownify_array)."*: *".$top10[$key]['dubas_count'].$dub_format;
+				break;
+			
+			case 1:
+				$dubasers .= "🥈 *".strtr($members[$key], $markdownify_array)."*: *".$top10[$key]['dubas_count'].$dub_format;
+				break;
+			
+			case 2:
+				$dubasers .= "🥉 *".strtr($members[$key], $markdownify_array)."*: *".$top10[$key]['dubas_count'].$dub_format;
+				break;
+				
+			default:
+				$dubasers .= $key+1 ."\. ".strtr($members[$key], $markdownify_array).": *".$top10[$key]['dubas_count'].$dub_format;
+				break;
+		}
+	}
+
+	sendMessage($chat_id, "Здесь дубасили *".$dubascount."* раз\.\n\nТоп дубасеров:\n".$dubasers, NULL);
+	mysqli_free_result($sql);
+	mysqli_close($db);
+}
+
+if ($message == '/mydubas') {
+	$db = mysqli_connect($db_host, $db_username, $db_pass, $db_schema);
+	if (mysqli_connect_errno()) error_log("Failed to connect to MySQL: " . mysqli_connect_error());
+		else echo "MySQL connect successful.\n";
+
+	$query = mysqli_fetch_all(mysqli_query($db, 'select dubas_count from dubas_stats where user_id='.$user_id), MYSQLI_ASSOC);
+	$dubas_last_digit = substr($query[0]['dubas_count'], -1);
+
+	if (is_null($query[0])) {
+		sendWelcomeMessage($chat_id, "Ты ещё ни разу не дубасил\. За работу\!", $message_id);
+	} else {
+		if ($dubas_last_digit == 2 || $dubas_last_digit == 3 || $dubas_last_digit == 4) {
+			$dub_format = "* раза\n";
+		} else {
+			$dub_format = "* раз\n";
+		}
+		sendWelcomeMessage($chat_id, "Ты дубасил *".$query[0]['dubas_count'].$dub_format, $message_id);
+	}
+}
 //----------------------------------------------------------------------------------------------------------------------------------//
 
 //отправка форматированного сообщения
