@@ -273,8 +273,7 @@ if ($message == '/mychats' || $message == '/mychats@welcome_ng_bot') {
 				sendMessage($chat_id, "Here's the list of chats where you set up welcome messages:", $menu_keyboard_chat_list);
 				break;
 		}
-	
-		mysqli_free_result($sql);
+
 		mysqli_close($db);
 	} else {
 		switch ($user_language_code) {
@@ -328,7 +327,6 @@ if ($message && $chat_id > 0) {
 		}
 	}
 
-	mysqli_free_result($sql);
 	mysqli_close($db);
 }
 
