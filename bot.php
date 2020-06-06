@@ -40,13 +40,21 @@ $markdownify_array = [
 	'>' => "\>",
 	'#' => "\#",
 	'+' => "\+",
+	'_' => "\_",
 	'-' => "\-",
 	'=' => "\=",
 	'|' => "\|",
 	'{' => "\{",
 	'}' => "\}",
 	'.' => "\.",
-	'!' => "\!"
+	'!' => "\!",
+	'*' => "\*",
+	'[' => "\[",
+	']' => "\]",
+	'(' => "\(",
+	')' => "\)",
+	'~' => "\~",
+	'`' => "\`"
 ];
 
 if ($message == '/start') {
@@ -728,6 +736,8 @@ if ($message == '/dubasivobot' || $message == '/dubascount') {
 				break;
 		}
 	}
+
+	error_log(print_r($dubasers, TRUE));
 
 	sendMessage($chat_id, "Здесь дубасили *".$dubascount."* раз\.\n\nТоп дубасеров:\n".$dubasers, NULL);
 	mysqli_free_result($sql);
