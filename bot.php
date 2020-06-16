@@ -40,21 +40,21 @@ $markdownify_array = [
 	'>' => "\>",
 	'#' => "\#",
 	'+' => "\+",
-	'_' => "\_",
+	// '_' => "\_",
 	'-' => "\-",
 	'=' => "\=",
 	'|' => "\|",
 	'{' => "\{",
 	'}' => "\}",
 	'.' => "\.",
-	'!' => "\!",
-	'*' => "\*",
-	'[' => "\[",
-	']' => "\]",
-	'(' => "\(",
-	')' => "\)",
-	'~' => "\~",
-	'`' => "\`"
+	'!' => "\!"
+	// '*' => "\*",
+	// '[' => "\[",
+	// ']' => "\]",
+	// '(' => "\(",
+	// ')' => "\)",
+	// '~' => "\~",
+	// '`' => "\`"
 ];
 
 if ($message == '/start') {
@@ -309,14 +309,13 @@ if ($message && $chat_id > 0) {
 	if (mysqli_connect_errno()) error_log("Failed to connect to MySQL: " . mysqli_connect_error());
 		else echo "MySQL connect successful.\n";
 
-	$query = mysqli_query($db, 'select settings_step, chat_id, language from main where chat_owner_user_id='.$user_id);
+	$query = mysqli_query($db, "select settings_step, chat_id, language from main where chat_owner_user_id=".$user_id." and settings_step='edit_chat_entering_new_message'");
 	while ($sql = mysqli_fetch_object($query)) {
 		$current_chat_id = $sql->chat_id;
-		$current_step = $sql->settings_step;
 		$current_language = $sql->language;
 	}
 
-	if ($current_step == 'edit_chat_entering_new_message') {
+	if (!is_null($current_chat_id)) {
 		mysqli_query($db, "update main set welcome_message_text='".$message."', settings_step='chat_list' where chat_id=".$current_chat_id." and chat_owner_user_id=".$user_id);
 		switch ($current_language) {
 			case 'ru':
@@ -326,7 +325,7 @@ if ($message && $chat_id > 0) {
 				sendMessage($chat_id, "Готово\! Новое сообщение установлено\.", $edit_success_keyboard);
 				break;
 
-			case 'en':
+			default:
 				$edit_success_keyboard = ['inline_keyboard' => [
 					[['text' => '⬅ Back to chat list', 'callback_data' => 'back_to_list:'.$current_chat_id]]
 				]];
@@ -459,7 +458,7 @@ switch ($callback_data[0]) {
 		]];
 
 		updateMessage($callback_chat_id, $callback_message_id, 
-		"Хорошо\! Отправьте следующим сообщением то, что вы хотите видеть в качестве приветствия\.\n\nПодсказка по форматированию:\n\*текст\* \- выделение жирным\n\_текст\_ \- выделение курсивом\n\\\ \`текст\\\ \` \- моноширинный текст\n\~текст\~ \- зачеркнутый текст\n\\\ \_\_текст\\\ \_\_ \- подчеркнутый текст\n\[текст\]\(ссылка\) \- вставка ссылки\nЭмодзи поддерживаются\. Форматирование совместимо с MarkdownV2\.\n\n_Текущее сообщение:_\n".$selected_chat_message, $cancel_new_message_keyboard);
+		"Хорошо\! Отправьте следующим сообщением то, что вы хотите видеть в качестве приветствия\.\n\nПодсказка по форматированию:\n\*текст\* \- выделение жирным\n\_текст\_ \- выделение курсивом\n\\\ \`текст\\\ \` \- моноширинный текст\n\~текст\~ \- зачеркнутый текст\n\_\_текст\_\_ \\\ \. \- подчеркнутый текст \n\[текст\]\(ссылка\) \- вставка ссылки\nЭмодзи поддерживаются\. Форматирование совместимо с MarkdownV2\.\n\n_Текущее сообщение:_\n".$selected_chat_message, $cancel_new_message_keyboard);
 
 		mysqli_free_result($sql);
 		mysqli_close($db);
@@ -484,7 +483,7 @@ switch ($callback_data[0]) {
 		]];
 
 		updateMessage($callback_chat_id, $callback_message_id, 
-		"Good\! Now send me your desired welcome in the next message\.\n\nFormatting guidelines:\n\*text\* \- bold\n\_text\_ \- italic\n\\\ \`text\\\ \` \- monospace text\n\~text\~ \- strikethrough text\n\\\ \_\_text\\\ \_\_ \- underline text\n\[text\]\(link\) \- insert link\nEmojis and MarkdownV2 are supported\.\n\n_Current message:_\n".$selected_chat_message, $cancel_new_message_keyboard);
+		"Good\! Now send me your desired welcome in the next message\.\n\nFormatting guidelines:\n\*text\* \- bold\n\_text\_ \- italic\n\\\ \`text\\\ \` \- monospace text\n\~text\~ \- strikethrough text\n\_\_text\_\_\\\ \. \- underline text\n\[text\]\(link\) \- insert link\nEmojis and MarkdownV2 are supported\.\n\n_Current message:_\n".$selected_chat_message, $cancel_new_message_keyboard);
 
 		mysqli_free_result($sql);
 		mysqli_close($db);
@@ -736,8 +735,6 @@ if ($message == '/dubasivobot' || $message == '/dubascount') {
 				break;
 		}
 	}
-
-	error_log(print_r($dubasers, TRUE));
 
 	sendMessage($chat_id, "Здесь дубасили *".$dubascount."* раз\.\n\nТоп дубасеров:\n".$dubasers, NULL);
 	mysqli_free_result($sql);
