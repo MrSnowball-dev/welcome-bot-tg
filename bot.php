@@ -57,6 +57,28 @@ $markdownify_array = [
 	// '`' => "\`"
 ];
 
+$markdownify_array_nicknames = [
+	//In all other places characters '_‘, ’*‘, ’[‘, ’]‘, ’(‘, ’)‘, ’~‘, ’`‘, ’>‘, ’#‘, ’+‘, ’-‘, ’=‘, ’|‘, ’{‘, ’}‘, ’.‘, ’!‘ must be escaped with the preceding character ’\'.
+	'>' => "\>",
+	'#' => "\#",
+	'+' => "\+",
+	'_' => "\_",
+	'-' => "\-",
+	'=' => "\=",
+	'|' => "\|",
+	'{' => "\{",
+	'}' => "\}",
+	'.' => "\.",
+	'!' => "\!",
+	'*' => "\*",
+	'[' => "\[",
+	']' => "\]",
+	'(' => "\(",
+	')' => "\)",
+	'~' => "\~",
+	'`' => "\`"
+];
+
 if ($message == '/start') {
 	switch ($user_language_code) {
 		case 'ru':
@@ -458,7 +480,7 @@ switch ($callback_data[0]) {
 		]];
 
 		updateMessage($callback_chat_id, $callback_message_id, 
-		"Хорошо\! Отправьте следующим сообщением то, что вы хотите видеть в качестве приветствия\.\n\nПодсказка по форматированию:\n\*текст\* \- выделение жирным\n\_текст\_ \- выделение курсивом\n\\\ \`текст\\\ \` \- моноширинный текст\n\~текст\~ \- зачеркнутый текст\n\_\_текст\_\_ \\\ \. \- подчеркнутый текст \n\[текст\]\(ссылка\) \- вставка ссылки\nЭмодзи поддерживаются\. Форматирование совместимо с MarkdownV2\.\n\n_Текущее сообщение:_\n".$selected_chat_message, $cancel_new_message_keyboard);
+		"Хорошо\! Отправьте следующим сообщением то, что вы хотите видеть в качестве приветствия\.\n\nПодсказка по форматированию:\n\*текст\* \- выделение жирным\n\_текст\_ \- выделение курсивом\n\\\ \`текст\\\ \` \- моноширинный текст\n\~текст\~ \- зачеркнутый текст\n\_\_текст\_\_ \\\ \. \- подчеркнутый текст \n\[текст\]\(ссылка\) \- вставка ссылки\n\nЭмодзи поддерживаются\. Чтобы добавить символы форматирования в текст \(*любые скобки*, \*, \_, \~, \`\) \- добавьте перед ними обратный слеш: \\\ \n\nФорматирование совместимо с MarkdownV2\.\n\n_Текущее сообщение:_\n".$selected_chat_message, $cancel_new_message_keyboard);
 
 		mysqli_free_result($sql);
 		mysqli_close($db);
@@ -483,7 +505,7 @@ switch ($callback_data[0]) {
 		]];
 
 		updateMessage($callback_chat_id, $callback_message_id, 
-		"Good\! Now send me your desired welcome in the next message\.\n\nFormatting guidelines:\n\*text\* \- bold\n\_text\_ \- italic\n\\\ \`text\\\ \` \- monospace text\n\~text\~ \- strikethrough text\n\_\_text\_\_\\\ \. \- underline text\n\[text\]\(link\) \- insert link\nEmojis and MarkdownV2 are supported\.\n\n_Current message:_\n".$selected_chat_message, $cancel_new_message_keyboard);
+		"Good\! Now send me your desired welcome in the next message\.\n\nFormatting guidelines:\n\*text\* \- bold\n\_text\_ \- italic\n\\\ \`text\\\ \` \- monospace text\n\~text\~ \- strikethrough text\n\_\_text\_\_\\\ \. \- underline text\n\[text\]\(link\) \- insert link\n\nTo add a formatting symbol in your text \(any brackets, \*, \_, \~, \`\) \- just add forward slash before them: \\\ \n\nEmojis and MarkdownV2 are supported\.\n\n_Current message:_\n".$selected_chat_message, $cancel_new_message_keyboard);
 
 		mysqli_free_result($sql);
 		mysqli_close($db);
@@ -653,113 +675,6 @@ if (is_int(stripos($message, '/notify ')) && $chat_id == '197416875') {
 
 
 
-
-if (is_int(stripos($message, '/meme')) && $message !== '/memecount') {
-	$db = mysqli_connect($db_host, $db_username, $db_pass, $db_schema);
-	if (mysqli_connect_errno()) error_log("Failed to connect to MySQL: " . mysqli_connect_error());
-		else echo "MySQL connect successful.\n";
-
-	mysqli_query($db, 'update main set memecount=memecount+1 where chat_id=\'-1001268103928\'');
-	mysqli_free_result($sql);
-	mysqli_close($db);
-}
-
-if ($message == '/memecount') {
-	$db = mysqli_connect($db_host, $db_username, $db_pass, $db_schema);
-	if (mysqli_connect_errno()) error_log("Failed to connect to MySQL: " . mysqli_connect_error());
-		else echo "MySQL connect successful.\n";
-
-	$query = mysqli_query($db, 'select memecount from main where chat_id=\'-1001268103928\'');
-	while ($sql = mysqli_fetch_object($query)) {
-		$memecount = $sql->memecount;
-	}
-	sendMessage($chat_id, 'Every meme count: *'.$memecount.'* memes\.', NULL);
-	mysqli_free_result($sql);
-	mysqli_close($db);
-}
-
-if ($sticker['file_unique_id'] == 'AgADuAADq1fECw' && $chat_id == '-1001268103928') {
-	$db = mysqli_connect($db_host, $db_username, $db_pass, $db_schema);
-	if (mysqli_connect_errno()) error_log("Failed to connect to MySQL: " . mysqli_connect_error());
-		else echo "MySQL connect successful.\n";
-
-	mysqli_query($db, 'update main set dubascount=dubascount+1 where chat_id=\'-1001268103928\'');
-	
-	$dubas_stats = mysqli_fetch_all(mysqli_query($db, "select user_id from dubas_stats where user_id=".$user_id), MYSQLI_ASSOC);
-	if (is_null($dubas_stats[0])) {
-		mysqli_query($db, "insert into dubas_stats (user_id, dubas_count) values (".$user_id.", 1)");
-	} else {
-		mysqli_query($db, "update dubas_stats set dubas_count=dubas_count+1 where user_id=".$user_id);
-	}
-
-	mysqli_close($db);
-}
-
-if ($message == '/dubasivobot' || $message == '/dubascount') {
-	$db = mysqli_connect($db_host, $db_username, $db_pass, $db_schema);
-	if (mysqli_connect_errno()) error_log("Failed to connect to MySQL: " . mysqli_connect_error());
-		else echo "MySQL connect successful.\n";
-
-	$query = mysqli_query($db, 'select dubascount from main where chat_id=\'-1001268103928\'');
-	while ($sql = mysqli_fetch_object($query)) {
-		$dubascount = $sql->dubascount;
-	}
-
-	$top10 = mysqli_fetch_all(mysqli_query($db, "select * from dubas_stats order by dubas_count desc limit 10"), MYSQLI_ASSOC);
-	$dubasers = "";
-	
-	foreach ($top10 as $key => $value) {
-		$dubas_last_digit = substr($top10[$key]['dubas_count'], -1);
-		$member = json_decode(file_get_contents($GLOBALS['api'].'/getChatMember?chat_id='.$chat_id.'&user_id='.$top10[$key]['user_id']), TRUE);
-		$members[$key] = $member['result']['user']['first_name'];
-		if ($dubas_last_digit == 2 || $dubas_last_digit == 3 || $dubas_last_digit == 4) {
-			$dub_format = "* раза\n";
-		} else {
-			$dub_format = "* раз\n";
-		}
-		switch ($key) {
-			case 0:
-				$dubasers .= "🥇 *".strtr($members[$key], $markdownify_array)."*: *".$top10[$key]['dubas_count'].$dub_format;
-				break;
-			
-			case 1:
-				$dubasers .= "🥈 *".strtr($members[$key], $markdownify_array)."*: *".$top10[$key]['dubas_count'].$dub_format;
-				break;
-			
-			case 2:
-				$dubasers .= "🥉 *".strtr($members[$key], $markdownify_array)."*: *".$top10[$key]['dubas_count'].$dub_format;
-				break;
-				
-			default:
-				$dubasers .= $key+1 ."\. ".strtr($members[$key], $markdownify_array).": *".$top10[$key]['dubas_count'].$dub_format;
-				break;
-		}
-	}
-
-	sendMessage($chat_id, "Здесь дубасили *".$dubascount."* раз\.\n\nТоп дубасеров:\n".$dubasers, NULL);
-	mysqli_free_result($sql);
-	mysqli_close($db);
-}
-
-if ($message == '/mydubas') {
-	$db = mysqli_connect($db_host, $db_username, $db_pass, $db_schema);
-	if (mysqli_connect_errno()) error_log("Failed to connect to MySQL: " . mysqli_connect_error());
-		else echo "MySQL connect successful.\n";
-
-	$query = mysqli_fetch_all(mysqli_query($db, 'select dubas_count from dubas_stats where user_id='.$user_id), MYSQLI_ASSOC);
-	$dubas_last_digit = substr($query[0]['dubas_count'], -1);
-
-	if (is_null($query[0])) {
-		sendWelcomeMessage($chat_id, "Ты ещё ни разу не дубасил\. За работу\!", $message_id);
-	} else {
-		if ($dubas_last_digit == 2 || $dubas_last_digit == 3 || $dubas_last_digit == 4) {
-			$dub_format = "* раза\n";
-		} else {
-			$dub_format = "* раз\n";
-		}
-		sendWelcomeMessage($chat_id, "Ты дубасил *".$query[0]['dubas_count'].$dub_format, $message_id);
-	}
-}
 //----------------------------------------------------------------------------------------------------------------------------------//
 
 //отправка форматированного сообщения
