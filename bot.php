@@ -57,26 +57,9 @@ $markdownify_array = [
 	// '`' => "\`"
 ];
 
-$markdownify_array_nicknames = [
-	//In all other places characters '_‘, ’*‘, ’[‘, ’]‘, ’(‘, ’)‘, ’~‘, ’`‘, ’>‘, ’#‘, ’+‘, ’-‘, ’=‘, ’|‘, ’{‘, ’}‘, ’.‘, ’!‘ must be escaped with the preceding character ’\'.
-	'>' => "\>",
-	'#' => "\#",
-	'+' => "\+",
-	'_' => "\_",
-	'-' => "\-",
-	'=' => "\=",
-	'|' => "\|",
-	'{' => "\{",
-	'}' => "\}",
-	'.' => "\.",
-	'!' => "\!",
-	'*' => "\*",
-	'[' => "\[",
-	']' => "\]",
-	'(' => "\(",
-	')' => "\)",
-	'~' => "\~",
-	'`' => "\`"
+$markdownify_brackets_only_array = [
+	'(' => '\(',
+	')' => '\)'
 ];
 
 if ($message == '/start') {
@@ -338,7 +321,17 @@ if ($message && $chat_id > 0) {
 	}
 
 	if (!is_null($current_chat_id)) {
-		mysqli_query($db, "update main set welcome_message_text='".$message."', settings_step='chat_list' where chat_id=".$current_chat_id." and chat_owner_user_id=".$user_id);
+		if (is_int(strpos($message, '('))) {
+			if(substr($message, strpos($message, '(')-1, 1) !== ']')
+			{
+				mysqli_query($db, "update main set welcome_message_text='".mysqli_real_escape_string($db, strtr($message, $markdownify_brackets_only_array))."', settings_step='chat_list' where chat_id=".$current_chat_id." and chat_owner_user_id=".$user_id);
+			} else {
+				mysqli_query($db, "update main set welcome_message_text='".$message."', settings_step='chat_list' where chat_id=".$current_chat_id." and chat_owner_user_id=".$user_id);
+			}
+		} else {
+			mysqli_query($db, "update main set welcome_message_text='".$message."', settings_step='chat_list' where chat_id=".$current_chat_id." and chat_owner_user_id=".$user_id);
+		}
+
 		switch ($current_language) {
 			case 'ru':
 				$edit_success_keyboard = ['inline_keyboard' => [
