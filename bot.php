@@ -328,6 +328,8 @@ if ($message && $chat_id > 0) {
 			} else {
 				mysqli_query($db, "update main set welcome_message_text='".$message."', settings_step='chat_list' where chat_id=".$current_chat_id." and chat_owner_user_id=".$user_id);
 			}
+		} elseif (is_int(strpos($message, '\\')) || is_int(strpos($message, '\''))) {
+			mysqli_query($db, "update main set welcome_message_text='".mysqli_real_escape_string($db, $message)."', settings_step='chat_list' where chat_id=".$current_chat_id." and chat_owner_user_id=".$user_id);
 		} else {
 			mysqli_query($db, "update main set welcome_message_text='".$message."', settings_step='chat_list' where chat_id=".$current_chat_id." and chat_owner_user_id=".$user_id);
 		}
@@ -473,7 +475,7 @@ switch ($callback_data[0]) {
 		]];
 
 		updateMessage($callback_chat_id, $callback_message_id, 
-		"Хорошо\! Отправьте следующим сообщением то, что вы хотите видеть в качестве приветствия\.\n\nПодсказка по форматированию:\n\*текст\* \- выделение жирным\n\_текст\_ \- выделение курсивом\n\\\ \`текст\\\ \` \- моноширинный текст\n\~текст\~ \- зачеркнутый текст\n\_\_текст\_\_ \\\ \. \- подчеркнутый текст \n\[текст\]\(ссылка\) \- вставка ссылки\n\nЭмодзи поддерживаются\. Чтобы добавить символы форматирования в текст \(*любые скобки*, \*, \_, \~, \`\) \- добавьте перед ними обратный слеш: \\\ \n\nФорматирование совместимо с MarkdownV2\.\n\n_Текущее сообщение:_\n".$selected_chat_message, $cancel_new_message_keyboard);
+		"Хорошо\! Отправьте следующим сообщением то, что вы хотите видеть в качестве приветствия\.\n\nПодсказка по форматированию:\n\*текст\* \- выделение жирным\n\_текст\_ \- выделение курсивом\n\\\ \`текст\\\ \` \- моноширинный текст\n\~текст\~ \- зачеркнутый текст\n\_\_текст\_\_ \\\ \. \- подчеркнутый текст \n\[текст\]\(ссылка\) \- вставка ссылки\n\nЭмодзи поддерживаются\. Чтобы добавить символы форматирования в текст \(\*, \_, \~, \`\) \- добавьте перед ними *обратный слеш*: \\\ \n\nФорматирование совместимо с MarkdownV2\.\n\n_Текущее сообщение:_\n".$selected_chat_message, $cancel_new_message_keyboard);
 
 		mysqli_free_result($sql);
 		mysqli_close($db);
@@ -498,7 +500,7 @@ switch ($callback_data[0]) {
 		]];
 
 		updateMessage($callback_chat_id, $callback_message_id, 
-		"Good\! Now send me your desired welcome in the next message\.\n\nFormatting guidelines:\n\*text\* \- bold\n\_text\_ \- italic\n\\\ \`text\\\ \` \- monospace text\n\~text\~ \- strikethrough text\n\_\_text\_\_\\\ \. \- underline text\n\[text\]\(link\) \- insert link\n\nTo add a formatting symbol in your text \(any brackets, \*, \_, \~, \`\) \- just add forward slash before them: \\\ \n\nEmojis and MarkdownV2 are supported\.\n\n_Current message:_\n".$selected_chat_message, $cancel_new_message_keyboard);
+		"Good\! Now send me your desired welcome in the next message\.\n\nFormatting guidelines:\n\*text\* \- bold\n\_text\_ \- italic\n\\\ \`text\\\ \` \- monospace text\n\~text\~ \- strikethrough text\n\_\_text\_\_\\\ \. \- underline text\n\[text\]\(link\) \- insert link\n\nTo add a formatting symbol in your text \(\*, \_, \~, \`\) \- just add *back slash* before them: \\\ \n\nEmojis and MarkdownV2 are supported\.\n\n_Current message:_\n".$selected_chat_message, $cancel_new_message_keyboard);
 
 		mysqli_free_result($sql);
 		mysqli_close($db);
