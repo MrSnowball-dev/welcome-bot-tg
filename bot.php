@@ -19,6 +19,8 @@ $user_language_code = isset($output['message']['from']['language_code']) ? $outp
 $user_id = isset($output['message']['from']['id']) ? $output['message']['from']['id'] : 'origin_user_id_empty';
 $message_id = isset($output['message']['message_id']) ? $output['message']['message_id'] : 'message_id_empty';
 $new_user = isset($output['message']['new_chat_members']) ? $output['message']['new_chat_members'] : 'new_user_empty';
+$new_user_id = isset($output['message']['new_chat_participant']['id']) ? $output['message']['new_chat_participant']['id'] : 'new_user_id_empty';
+$is_new_user_bot = isset($output['message']['new_chat_participant']['is_bot']) ? $output['message']['new_chat_participant']['is_bot'] : 'no_bot_info';
 $migrated_from = isset($output['message']['migrate_from_chat_id']) ? $output['message']['migrate_from_chat_id'] : 'no_migration';
 $migrated_to = isset($output['message']['migrate_to_chat_id']) ? $output['message']['migrate_to_chat_id'] : 'no_migration';
 $sticker = isset($output['message']['sticker']) ? $output['message']['sticker'] : 'no_sticker';
@@ -40,7 +42,7 @@ $markdownify_array = [
 	'>' => "\>",
 	'#' => "\#",
 	'+' => "\+",
-	// '_' => "\_",
+	'_' => "\_",
 	'-' => "\-",
 	'=' => "\=",
 	'|' => "\|",
@@ -113,7 +115,7 @@ if ($message == '/init') {
 				while ($sql1 = mysqli_fetch_object($query)) {
 					$welcome_message = strtr($sql1->welcome_message_text, $markdownify_array);
 				}
-				$query = mysqli_query($db, "update main set chat_title='".filter_var($chat, FILTER_SANITIZE_ADD_SLASHES)."' where chat_id=".$chat_id);
+				mysqli_query($db, "update main set chat_title='".filter_var($chat, FILTER_SANITIZE_ADD_SLASHES)."' where chat_id=".$chat_id);
 				switch ($user_language_code) {
 					case 'ru':
 						sendMessage($user_id, "Сообщение для чата *".strtr($chat, $markdownify_array)."* уже настроено\!\nТекущее сообщение:\n\n".$welcome_message."\n\nДля изменения приветственного сообщения используйте команду /mychats", NULL);
@@ -177,12 +179,30 @@ if ($new_user !== 'new_user_empty') {
 	}
 	
 	if ($sql_chat_id == $chat_id) {
-		$query = mysqli_query($db, 'select welcome_message_text from main where chat_id='.$chat_id);
+		$query = mysqli_query($db, 'select welcome_message_text, captcha from main where chat_id='.$chat_id);
 		while ($sql = mysqli_fetch_object($query)) {
 			$welcome_message = strtr($sql->welcome_message_text, $markdownify_array);
+			$captcha = $sql->captcha;
 		}
-		mysqli_query($db, 'update main set welcome_count=welcome_count+1, last_joined=CURRENT_TIMESTAMP where chat_id='.$chat_id);
-		sendWelcomeMessage($chat_id, $welcome_message, $message_id);
+		
+		switch ($captcha) {
+			case 'off':
+				mysqli_query($db, 'update main set welcome_count=welcome_count+1, last_joined=CURRENT_TIMESTAMP where chat_id='.$chat_id);
+				sendWelcomeMessage($chat_id, $welcome_message, $message_id);
+			break;
+
+			case 'on':
+				//error_log("CHAT: ".print_r($chat_id, TRUE). "\nUSER: ".print_r($new_user_id, TRUE)."\nMESSAGE: ".print_r($message_id+2, TRUE));
+				mysqli_query($db, 'update main set welcome_count=welcome_count+1, last_joined=CURRENT_TIMESTAMP where chat_id='.$chat_id);
+				mysqli_query($db, "INSERT INTO captcha_table (chat_id, user_id, captcha_message_id) values (".$chat_id.", ".$new_user_id.", ".$message_id + 2 .")");
+				$captcha_keyboard = ['inline_keyboard' => [
+					[['text' => 'Yes I am', 'callback_data' => 'solve_captcha']]
+				]];
+				sendWelcomeMessage($chat_id, $welcome_message, $message_id);
+				sendMessage($chat_id, "Please confirm you are a human by pressing a button below", $captcha_keyboard);
+			break;
+		}
+		
 	} else {
 		sendWelcomeMessage($chat_id, "Привет\!", $message_id);
 	}
@@ -363,7 +383,22 @@ if ($message && $chat_id > 0) {
 $callback_data = explode(':', $callback_data);
 switch ($callback_data[0]) {
 	case 'callback_data_empty':
-		break;
+	break;
+
+	case 'solve_captcha':
+		$db = mysqli_connect($db_host, $db_username, $db_pass, $db_schema);
+		mysqli_set_charset($db, 'utf8mb4');
+		mysqli_query($db, "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci");
+		if (mysqli_connect_errno()) error_log("Failed to connect to MySQL: " . mysqli_connect_error());
+			else echo "MySQL connect successful.\n";
+
+		$query = mysqli_fetch_assoc(mysqli_query($db, 'select captcha_message_id from captcha_table where user_id='.$callback_user_id.' and chat_id='.$callback_chat_id));
+		error_log(print_r($query, TRUE));
+		deleteMessage($callback_chat_id, $query[0]['captcha_message_id']);
+		mysqli_query($db, 'delete * from captcha_table where chat_id='.$callback_chat_id.' and user_id='.$callback_user_id);
+
+		mysqli_close($db);
+	break;
 
 	case 'lang_switch_to_ru':
 		$db = mysqli_connect($db_host, $db_username, $db_pass, $db_schema);
@@ -372,14 +407,14 @@ switch ($callback_data[0]) {
 		if (mysqli_connect_errno()) error_log("Failed to connect to MySQL: " . mysqli_connect_error());
 			else echo "MySQL connect successful.\n";
 
-		$query = mysqli_query($db, 'update main set language=\'ru\' where chat_owner_user_id='.$callback_user_id);
+		mysqli_query($db, 'update main set language=\'ru\' where chat_owner_user_id='.$callback_user_id);
 		$language_switcher_keyboard = ['inline_keyboard' => [
 			[['text' => 'Change to 🇺🇸 English', 'callback_data' => 'lang_switch_to_en']]
 		]];
 		updateMessage($callback_chat_id, $callback_message_id, "_Ваши настройки:_\n\nЯзык: 🇷🇺 Русский", $language_switcher_keyboard);
 
 		mysqli_close($db);
-		break;
+	break;
 
 	case 'lang_switch_to_en':
 		$db = mysqli_connect($db_host, $db_username, $db_pass, $db_schema);
@@ -388,19 +423,50 @@ switch ($callback_data[0]) {
 		if (mysqli_connect_errno()) error_log("Failed to connect to MySQL: " . mysqli_connect_error());
 			else echo "MySQL connect successful.\n";
 
-		$query = mysqli_query($db, 'update main set language=\'en\' where chat_owner_user_id='.$callback_user_id);
+		mysqli_query($db, 'update main set language=\'en\' where chat_owner_user_id='.$callback_user_id);
 		$language_switcher_keyboard = ['inline_keyboard' => [
 			[['text' => 'Сменить на 🇷🇺 Русский', 'callback_data' => 'lang_switch_to_ru']]
 		]];
 		updateMessage($callback_chat_id, $callback_message_id, "_Your settings:_\n\nLanguage: 🇺🇸 English", $language_switcher_keyboard);
 
 		mysqli_close($db);
-		break;
+	break;
 
 
+	
 
+	case 'captcha_switch_on':
+		$db = mysqli_connect($db_host, $db_username, $db_pass, $db_schema);
+		mysqli_set_charset($db, 'utf8mb4');
+		mysqli_query($db, "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci");
+		if (mysqli_connect_errno()) error_log("Failed to connect to MySQL: " . mysqli_connect_error());
+			else echo "MySQL connect successful.\n";
 
+		mysqli_query($db, 'update main set captcha=\'on\' where chat_id='.$callback_data[1]);
+		
+		$back_to_chat_keyboard = ['inline_keyboard' => [
+			[['text' => '⬅ Back to chat', 'callback_data' => 'chat_selected_en:'.$callback_data[1]]]
+		]];
+		updateMessage($callback_chat_id, $callback_message_id, 'Captcha turned *ON*, please ensure the bot has admin rights to ban people\!', $back_to_chat_keyboard);
 
+	break;
+
+	case 'captcha_switch_off':
+		$db = mysqli_connect($db_host, $db_username, $db_pass, $db_schema);
+		mysqli_set_charset($db, 'utf8mb4');
+		mysqli_query($db, "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci");
+		if (mysqli_connect_errno()) error_log("Failed to connect to MySQL: " . mysqli_connect_error());
+			else echo "MySQL connect successful.\n";
+
+		mysqli_query($db, 'update main set captcha=\'off\' where chat_id='.$callback_data[1]);
+		mysqli_query($db, 'delete * from captcha_table where chat_id='.$callback_data[1]);
+		
+		$back_to_chat_keyboard = ['inline_keyboard' => [
+			[['text' => '⬅ Back to chat', 'callback_data' => 'chat_selected_en:'.$callback_data[1]]]
+		]];
+		updateMessage($callback_chat_id, $callback_message_id, 'Captcha turned *OFF*, all pending confirmations have been cleared', $back_to_chat_keyboard);
+
+	break;
 
 
 	case 'chat_selected_ru':
@@ -410,21 +476,35 @@ switch ($callback_data[0]) {
 		if (mysqli_connect_errno()) error_log("Failed to connect to MySQL: " . mysqli_connect_error());
 			else echo "MySQL connect successful.\n";
 
-		$query = mysqli_query($db, "update main set settings_step='chat_selected' where chat_id=".$callback_data[1]);
-		$query = mysqli_query($db, "select chat_title, welcome_message_text from main where chat_id=".$callback_data[1]);
+		mysqli_query($db, "update main set settings_step='chat_selected' where chat_id=".$callback_data[1]);
+		mysqli_query($db, "select chat_title, welcome_message_text, capthca from main where chat_id=".$callback_data[1]);
 		while ($sql = mysqli_fetch_object($query)) {
 			$selected_chat_title = strtr($sql->chat_title, $markdownify_array);
 			$selected_chat_message = strtr($sql->welcome_message_text, $markdownify_array);
+			$captcha_status = $sql->captcha;
 		}
+
+		switch ($captcha_status) {
+			case 'on':
+				$captcha_status = 'ВКЛ';
+				$captcha_switch = '_off';
+			break;
+			
+			default:
+				$captcha_status = 'ВЫКЛ';
+				$captcha_switch = '_on';    
+			break;
+		}
+
 		$chat_selected_keyboard = ['inline_keyboard' => [
-			[['text' => '✏ Изменить', 'callback_data' => 'edit_chat_ru:'.$callback_data[1]], ['text' => '❌ Удалить', 'callback_data' => 'delete_chat_ru:'.$callback_data[1]]],
-			[['text' => '⬅ Назад к списку чатов', 'callback_data' => 'back_to_list:'.$callback_data[1]]]
+			[['text' => '✏ Изменить', 'callback_data' => 'edit_chat_ru:'.$callback_data[1]], ['text' => 'Captcha: '.$captcha_status, 'callback_data' => 'captcha_switch'.$captcha_switch.':'.$callback_data[1]]],
+			[['text' => '⬅ Назад к списку чатов', 'callback_data' => 'back_to_list:'.$callback_data[1]], ['text' => '❌ Удалить', 'callback_data' => 'delete_chat_ru:'.$callback_data[1]]]
 		]];
 		updateMessage($callback_chat_id, $callback_message_id, "_Чат:_\n*".$selected_chat_title."*\n\n_Текущее сообщение:_\n".$selected_chat_message, $chat_selected_keyboard);
 
 		mysqli_free_result($sql);
 		mysqli_close($db);
-		break;
+	break;
 
 	case 'chat_selected_en':
 		$db = mysqli_connect($db_host, $db_username, $db_pass, $db_schema);
@@ -433,21 +513,32 @@ switch ($callback_data[0]) {
 		if (mysqli_connect_errno()) error_log("Failed to connect to MySQL: " . mysqli_connect_error());
 			else echo "MySQL connect successful.\n";
 
-		$query = mysqli_query($db, "update main set settings_step='chat_selected' where chat_id=".$callback_data[1]);
-		$query = mysqli_query($db, "select chat_title, welcome_message_text from main where chat_id=".$callback_data[1]);
+		mysqli_query($db, "update main set settings_step='chat_selected' where chat_id=".$callback_data[1]);
+		$query = mysqli_query($db, "select chat_title, welcome_message_text, captcha from main where chat_id=".$callback_data[1]);
 		while ($sql = mysqli_fetch_object($query)) {
 			$selected_chat_title = strtr($sql->chat_title, $markdownify_array);
 			$selected_chat_message = strtr($sql->welcome_message_text, $markdownify_array);
+			$captcha_status = $sql->captcha;
+		}
+
+		switch ($captcha_status) {
+			case 'on':
+				$captcha_switch = '_off';
+			break;
+			
+			default:
+				$captcha_switch = '_on';    
+			break;
 		}
 		$chat_selected_keyboard = ['inline_keyboard' => [
-			[['text' => '✏ Edit', 'callback_data' => 'edit_chat_en:'.$callback_data[1]], ['text' => '❌ Delete', 'callback_data' => 'delete_chat_en:'.$callback_data[1]]],
-			[['text' => '⬅ Back to chat list', 'callback_data' => 'back_to_list:'.$callback_data[1]]]
+			[['text' => '✏ Edit', 'callback_data' => 'edit_chat_en:'.$callback_data[1]], ['text' => 'Captcha: '.$captcha_status, 'callback_data' => 'captcha_switch'.$captcha_switch.':'.$callback_data[1]]],
+			[['text' => '⬅ Back to chat list', 'callback_data' => 'back_to_list:'.$callback_data[1]], ['text' => '❌ Delete', 'callback_data' => 'delete_chat_en:'.$callback_data[1]]]
 		]];
 		updateMessage($callback_chat_id, $callback_message_id, "_Chat:_\n*".$selected_chat_title."*\n\n_Welcome message:_\n".$selected_chat_message, $chat_selected_keyboard);
 
 		mysqli_free_result($sql);
 		mysqli_close($db);
-		break;
+	break;
 
 
 
@@ -463,7 +554,7 @@ switch ($callback_data[0]) {
 		if (mysqli_connect_errno()) error_log("Failed to connect to MySQL: " . mysqli_connect_error());
 			else echo "MySQL connect successful.\n";
 
-		$query = mysqli_query($db, "update main set settings_step='edit_chat_entering_new_message' where chat_id=".$callback_data[1]);
+		mysqli_query($db, "update main set settings_step='edit_chat_entering_new_message' where chat_id=".$callback_data[1]);
 		$query = mysqli_query($db, "select chat_title, welcome_message_text from main where chat_id=".$callback_data[1]);
 		while ($sql = mysqli_fetch_object($query)) {
 			$selected_chat_title = strtr($sql->chat_title, $markdownify_array);
@@ -479,7 +570,7 @@ switch ($callback_data[0]) {
 
 		mysqli_free_result($sql);
 		mysqli_close($db);
-		break;
+	break;
 
 	case 'edit_chat_en':
 		$db = mysqli_connect($db_host, $db_username, $db_pass, $db_schema);
@@ -488,7 +579,7 @@ switch ($callback_data[0]) {
 		if (mysqli_connect_errno()) error_log("Failed to connect to MySQL: " . mysqli_connect_error());
 			else echo "MySQL connect successful.\n";
 
-		$query = mysqli_query($db, "update main set settings_step='edit_chat_entering_new_message' where chat_id=".$callback_data[1]);
+		mysqli_query($db, "update main set settings_step='edit_chat_entering_new_message' where chat_id=".$callback_data[1]);
 		$query = mysqli_query($db, "select chat_title, welcome_message_text from main where chat_id=".$callback_data[1]);
 		while ($sql = mysqli_fetch_object($query)) {
 			$selected_chat_title = strtr($sql->chat_title, $markdownify_array);
@@ -504,7 +595,7 @@ switch ($callback_data[0]) {
 
 		mysqli_free_result($sql);
 		mysqli_close($db);
-		break;
+	break;
 
 
 
@@ -520,7 +611,7 @@ switch ($callback_data[0]) {
 		if (mysqli_connect_errno()) error_log("Failed to connect to MySQL: " . mysqli_connect_error());
 			else echo "MySQL connect successful.\n";
 
-		$query = mysqli_query($db, "update main set settings_step='delete_chat' where chat_id=".$callback_data[1]);
+		mysqli_query($db, "update main set settings_step='delete_chat' where chat_id=".$callback_data[1]);
 		$query = mysqli_query($db, "select chat_title from main where chat_id=".$callback_data[1]);
 		while ($sql = mysqli_fetch_object($query)) {
 			$delete_prompt_chat_title = strtr($sql->chat_title, $markdownify_array);
@@ -533,7 +624,7 @@ switch ($callback_data[0]) {
 
 		mysqli_free_result($sql);
 		mysqli_close($db);
-		break;
+	break;
 	
 	case 'delete_chat_en':
 		$db = mysqli_connect($db_host, $db_username, $db_pass, $db_schema);
@@ -542,7 +633,7 @@ switch ($callback_data[0]) {
 		if (mysqli_connect_errno()) error_log("Failed to connect to MySQL: " . mysqli_connect_error());
 			else echo "MySQL connect successful.\n";
 
-		$query = mysqli_query($db, "update main set settings_step='delete_chat' where chat_id=".$callback_data[1]);
+		mysqli_query($db, "update main set settings_step='delete_chat' where chat_id=".$callback_data[1]);
 		$query = mysqli_query($db, "select chat_title from main where chat_id=".$callback_data[1]);
 		while ($sql = mysqli_fetch_object($query)) {
 			$delete_prompt_chat_title = strtr($sql->chat_title, $markdownify_array);
@@ -555,7 +646,7 @@ switch ($callback_data[0]) {
 
 		mysqli_free_result($sql);
 		mysqli_close($db);
-		break;
+	break;
 
 		
 
@@ -580,7 +671,7 @@ switch ($callback_data[0]) {
 
 		mysqli_free_result($sql);
 		mysqli_close($db);
-		break;
+	break;
 
 	case 'delete_chat_confirm_en':
 		$db = mysqli_connect($db_host, $db_username, $db_pass, $db_schema);
@@ -600,7 +691,7 @@ switch ($callback_data[0]) {
 
 		mysqli_free_result($sql);
 		mysqli_close($db);
-		break;
+	break;
 
 
 			
@@ -611,7 +702,7 @@ switch ($callback_data[0]) {
 		if (mysqli_connect_errno()) error_log("Failed to connect to MySQL: " . mysqli_connect_error());
 			else echo "MySQL connect successful.\n";
 
-		$query = mysqli_query($db, "update main set settings_step='chat_list' where chat_id=".$callback_data[1]);
+		mysqli_query($db, "update main set settings_step='chat_list' where chat_id=".$callback_data[1]);
 		$query = mysqli_query($db, 'select chat_id, chat_title, language from main where chat_owner_user_id='.$callback_user_id);
 		while ($sql = mysqli_fetch_object($query)) {
 			$language = $sql->language;
@@ -636,7 +727,45 @@ switch ($callback_data[0]) {
 
 		mysqli_free_result($sql);
 		mysqli_close($db);
-		break;
+	break;
+}
+
+
+
+
+
+
+
+if ($argv[1] == 'captcha_scan' || $message == '/captcha_test') {
+	error_log("SCANNING");
+	$db = mysqli_connect($db_host, $db_username, $db_pass, $db_schema);
+	mysqli_set_charset($db, 'utf8mb4');
+	mysqli_query($db, "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci");
+	if (mysqli_connect_errno()) error_log("Failed to connect to MySQL: " . mysqli_connect_error());
+		else echo "MySQL connect successful.\n";
+
+	$query = mysqli_query($db, 'select * from captcha_table');
+	while ($sql = mysqli_fetch_object($query)) {
+		$scan_chat_id[] = $sql->chat_id;
+		$scan_user_id[] = $sql->user_id;
+		$scan_message_id[] = $sql->captcha_message_id;
+		$scan_time[] = $sql->time_joined;
+	}
+	$now = time();
+	error_log(print_r($scan_chat_id, TRUE));
+	error_log(print_r($scan_user_id, TRUE));
+	error_log(print_r($scan_message_id, TRUE));
+	error_log(print_r($scan_time, TRUE));
+	error_log($now - strtotime($scan_time[0]));
+	foreach ($scan_chat_id as $key => $value) {
+		$db_time = strtotime($scan_time[$key]);
+		if (($now - $db_time) > 300) {
+			deleteMessage($scan_chat_id[$key], $scan_message_id[$key]);
+			kickUser($scan_chat_id[$key], $scan_user_id[$key]);
+			mysqli_query($db, 'delete * from captcha_table where user_id='.$scan_user_id[$key].' and chat_id='.$scan_chat_id[$key]);
+			mysqli_query($db, 'update main set kick_count=kick_count+1 where chat_id='.$scan_chat_id[$key]);
+		}
+	}
 }
 
 
@@ -690,6 +819,11 @@ function updateMessage($chat_id, $message_id, $new_message, $inline_keyboard)
 		file_get_contents($GLOBALS['api'].'/editMessageText?chat_id='.$chat_id.'&message_id='.$message_id.'&text='.urlencode($new_message).'&reply_markup='.json_encode($inline_keyboard).'&parse_mode=MarkdownV2');
 		file_get_contents($GLOBALS['api'].'/answerCallbackQuery?callback_query_id='.$GLOBALS['callback_id']);
 	}
+}
+
+//удаление юзера по истечении капчи
+function kickUser($chat_id, $user_id) {
+	file_get_contents($GLOBALS['api'].'/kickChatMember?chat_id='.$chat_id.'&user_id='.$user_id);
 }
 
 //отправка приветствия
